@@ -43,7 +43,7 @@ const DEFAULT_CONFIG_PATH = path.join(CONFIG_DIR, 'default.json');
 function loadConfigFromFile(): Partial<AppConfig> {
   try {
     if (fs.existsSync(DEFAULT_CONFIG_PATH)) {
-      const config = JSON.parse(fs.readFileSync(DEFAULT_CONFIG_PATH, 'utf-8'));
+      const config = JSON.parse(fs.readFileSync(DEFAULT_CONFIG_PATH, 'utf-8')) as Partial<AppConfig>;
       return config;
     }
     console.warn(`Warning: Config file not found at ${DEFAULT_CONFIG_PATH}. Using default configuration.`);

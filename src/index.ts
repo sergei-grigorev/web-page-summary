@@ -8,8 +8,11 @@ import { summarize } from './modules/summarizer';
 import { convertToMarkdown, formatOutput, saveToFile } from './modules/converter';
 import { SummarizerOptions } from './types';
 import { logger } from './modules/utils/logger';
-import { handleError, createConfigurationError, createFileSystemError } from './modules/utils/error';
+import { handleError, createFileSystemError } from './modules/utils/error';
 import fs from 'fs';
+
+// Export main function for library usage
+export { summarizeArticle } from './lib';
 
 /**
  * Main application function

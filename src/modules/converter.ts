@@ -2,7 +2,6 @@ import TurndownService from 'turndown';
 import fs from 'fs';
 import path from 'path';
 import { ConverterOptions, ConversionResult } from '../types';
-import { getConfig } from './config';
 import { showProgress, showSuccess, showError } from './cli';
 
 /**
@@ -12,7 +11,6 @@ export function convertToMarkdown(
   content: string,
   options?: Partial<ConverterOptions>
 ): ConversionResult {
-  const config = getConfig();
   const converterOptions = { ...getDefaultOptions(), ...options };
   
   showProgress('Converting content to Markdown');
@@ -58,7 +56,7 @@ function configureTurndown(options: ConverterOptions): TurndownService {
   // Add custom rules
   turndownService.addRule('codeBlocks', {
     filter: ['pre'],
-    replacement: function(content, node) {
+    replacement: function(content: string, _node: any): string {
       return '```\n' + content + '\n```';
     }
   });

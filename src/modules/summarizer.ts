@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { SummarizerOptions, SummaryResult, SummaryLength } from '../types';
-import { getConfig, getApiKey } from './config';
+import { getApiKey } from './config';
 import { showProgress, showError } from './cli';
 
 // Cache for the Gemini model instance
@@ -70,7 +70,7 @@ function extractKeyPoints(summary: string): { summary: string; keyPoints: string
   const keyPointsMatch = summary.match(/key points:|main points:|key takeaways:|main takeaways:/i);
   
   if (keyPointsMatch) {
-    const splitIndex = keyPointsMatch.index!;
+    const splitIndex = keyPointsMatch.index || 0;
     const mainSummary = summary.substring(0, splitIndex).trim();
     const keyPointsSection = summary.substring(splitIndex);
     
@@ -79,7 +79,7 @@ function extractKeyPoints(summary: string): { summary: string; keyPoints: string
       .split(/\n+/)
       .slice(1) // Skip the header
       .filter(line => line.trim().startsWith('-') || line.trim().startsWith('•') || /^\d+\./.test(line.trim()))
-      .map(line => line.replace(/^[-•\d\.\s]+/, '').trim())
+      .map(line => line.replace(/^[-•\d.\s]+/, '').trim())
       .filter(Boolean);
     
     return {
@@ -98,7 +98,6 @@ export async function summarize(
   content: string,
   options: SummarizerOptions
 ): Promise<SummaryResult> {
-  const config = getConfig();
   const originalWordCount = countWords(content);
   
   showProgress(`Generating ${options.length} summary with Gemini API`);
@@ -143,7 +142,7 @@ export async function summarize(
         // Wait before retry (exponential backoff)
         const delay = Math.pow(2, retries) * 1000;
         showProgress(`API error, retrying in ${delay}ms (${retries}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise<void>(resolve => setTimeout(resolve, delay));
       }
     }
     

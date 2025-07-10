@@ -2,8 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ScraperOptions, ScraperResult } from '../types';
 import { getConfig } from './config';
 import { showProgress } from './cli';
-import { createNetworkError, createUnknownError, handleError } from './utils/error';
-import { ERROR_MESSAGES } from '../constants';
+import { createNetworkError, handleError } from './utils/error';
 
 /**
  * Validates and normalizes a URL
@@ -177,7 +176,7 @@ export async function scrapeUrl(
 /**
  * Handles Axios response errors and converts them to appropriate AppErrors
  */
-function handleAxiosResponseError(error: any, url: string, scraperConfig: ScraperOptions): never {
+function handleAxiosResponseError(error: any, url: string, _scraperConfig: ScraperOptions): never {
   const status = error.response?.status;
   const statusText = error.response?.statusText;
   

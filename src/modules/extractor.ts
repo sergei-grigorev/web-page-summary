@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { load, CheerioAPI, Cheerio } from 'cheerio';
 import { ExtractorOptions, ExtractedContent } from '../types';
 import { getConfig } from './config';
 import { showProgress } from './cli';
@@ -52,7 +52,7 @@ export async function extractContent(
 /**
  * Extract title from the document
  */
-function extractTitle($: ReturnType<typeof load>): string | undefined {
+function extractTitle($: CheerioAPI): string | undefined {
   // Try different title selectors in order of preference
   const titleSelectors = [
     'h1.article-title',
@@ -81,7 +81,7 @@ function extractTitle($: ReturnType<typeof load>): string | undefined {
  * Remove unwanted elements from the document
  */
 function removeUnwantedElements(
-  $: ReturnType<typeof load>,
+  $: CheerioAPI,
   selectors: string[] = []
 ): void {
   // Default elements to remove
@@ -120,7 +120,7 @@ function removeUnwantedElements(
 /**
  * Find the main content element in the document
  */
-function findMainContent($: ReturnType<typeof load>): any {
+function findMainContent($: CheerioAPI): Cheerio<any> {
   // Try different content selectors in order of preference
   const contentSelectors = [
     'article',
@@ -167,10 +167,10 @@ function findMainContent($: ReturnType<typeof load>): any {
  * Clean and normalize content
  */
 function cleanContent(
-  content: any,
-  $: ReturnType<typeof load>,
+  content: Cheerio<any>,
+  $: CheerioAPI,
   options: ExtractorOptions
-): any {
+): Cheerio<any> {
   // Remove empty paragraphs
   content.find('p').each((_: number, element: any) => {
     const paragraph = $(element);
@@ -207,7 +207,7 @@ function cleanContent(
 /**
  * Extract author information
  */
-function extractAuthor($: ReturnType<typeof load>): string | undefined {
+function extractAuthor($: CheerioAPI): string | undefined {
   // Try different author selectors
   const authorSelectors = [
     'meta[name="author"]',
@@ -238,7 +238,7 @@ function extractAuthor($: ReturnType<typeof load>): string | undefined {
 /**
  * Extract publication date
  */
-function extractPublishDate($: ReturnType<typeof load>): Date | undefined {
+function extractPublishDate($: CheerioAPI): Date | undefined {
   // Try different date selectors
   const dateSelectors = [
     'meta[name="date"]',
@@ -290,7 +290,7 @@ function extractPublishDate($: ReturnType<typeof load>): Date | undefined {
 /**
  * Extract excerpt or summary
  */
-function extractExcerpt($: ReturnType<typeof load>): string | undefined {
+function extractExcerpt($: CheerioAPI): string | undefined {
   // Try different excerpt selectors
   const excerptSelectors = [
     'meta[name="description"]',

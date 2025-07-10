@@ -15,42 +15,42 @@ export const ERROR_MESSAGES = {
     TIMEOUT: 'Request timed out',
     INVALID_URL: 'Invalid URL format',
     INVALID_RESPONSE: 'Invalid response from server',
-  },
+  } as const,
   API: {
     AUTHENTICATION_FAILED: 'API authentication failed',
     RATE_LIMIT_EXCEEDED: 'API rate limit exceeded',
     INVALID_RESPONSE: 'Invalid API response',
     SERVICE_UNAVAILABLE: 'API service is currently unavailable',
-  },
+  } as const,
   VALIDATION: {
     MISSING_REQUIRED_FIELD: 'Missing required field',
     INVALID_FORMAT: 'Invalid format',
     INVALID_OPTION: 'Invalid option value',
-  },
+  } as const,
   EXTRACTION: {
     NO_CONTENT_FOUND: 'No content could be extracted from the page',
     PARSING_FAILED: 'Failed to parse page content',
-  },
+  } as const,
   SUMMARIZATION: {
     GENERATION_FAILED: 'Failed to generate summary',
     CONTENT_TOO_LONG: 'Content is too long for summarization',
     CONTENT_TOO_SHORT: 'Content is too short for summarization',
-  },
+  } as const,
   FILE_SYSTEM: {
     WRITE_FAILED: 'Failed to write to file',
     READ_FAILED: 'Failed to read from file',
     PERMISSION_DENIED: 'Permission denied',
     FILE_NOT_FOUND: 'File not found',
-  },
+  } as const,
   CONFIGURATION: {
     INVALID_CONFIG: 'Invalid configuration',
     MISSING_API_KEY: 'Missing API key',
     CONFIG_FILE_ERROR: 'Error loading configuration file',
-  },
+  } as const,
   UNKNOWN: {
     GENERAL_ERROR: 'An unexpected error occurred',
-  },
-};
+  } as const,
+} as const;
 
 // Logging constants
 export const DEFAULT_LOGGER_OPTIONS = {
