@@ -1,0 +1,27 @@
+{
+  "api": {
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+  },
+  "defaults": {
+    "summaryLength": "medium",
+    "outputFormat": "markdown",
+    "outputPath": "./summaries"
+  },
+  "scraper": {
+    "timeout": 10000,
+    "retries": 3,
+    "userAgent": "Mozilla/5.0 (compatible; ArticleSummarizer/1.0)"
+  },
+  "extractor": {
+    "removeSelectors": [
+      "nav",
+      "header",
+      "footer",
+      ".ads",
+      ".comments",
+      ".sidebar"
+    ],
+    "includeImages": false,
+    "preserveLinks": true
+  }
+}
