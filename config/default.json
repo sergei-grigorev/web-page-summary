@@ -1,6 +1,5 @@
 {
   "api": {
-    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
   },
   "defaults": {
     "summaryLength": "medium",

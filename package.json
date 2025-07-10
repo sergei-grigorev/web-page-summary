@@ -1,10 +1,18 @@
 {
   "name": "article-summarizer",
   "version": "1.0.0",
-  "description": "CLI tool for summarizing web articles using AI",
+  "description": "CLI tool for summarizing web articles using Google's Gemini AI",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "summarizer": "dist/index.js"
+    "summarizer": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "config"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
   },
   "scripts": {
     "build": "tsc",
@@ -12,19 +20,34 @@
     "dev": "ts-node src/index.ts",
     "test": "jest",
     "lint": "eslint . --ext .ts",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "postinstall": "node -e \"try { require('fs').mkdirSync('./config', { recursive: true }); } catch (e) {}\"",
+    "release": "npm version patch && npm publish"
   },
   "keywords": [
     "summarizer",
     "ai",
     "gemini",
     "cli",
-    "article"
+    "article",
+    "web",
+    "markdown",
+    "summary",
+    "content-extraction"
   ],
-  "author": "",
+  "author": "Your Name <your.email@example.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/article-summarizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/article-summarizer/issues"
+  },
+  "homepage": "https://github.com/yourusername/article-summarizer#readme",
   "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.1.3",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "commander": "^11.1.0",

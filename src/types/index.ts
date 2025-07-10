@@ -65,3 +65,46 @@ export interface ConversionResult {
     [key: string]: any;
   };
 }
+
+// Error handling types
+export enum ErrorType {
+  NETWORK = 'NETWORK',
+  API = 'API',
+  VALIDATION = 'VALIDATION',
+  EXTRACTION = 'EXTRACTION',
+  SUMMARIZATION = 'SUMMARIZATION',
+  FILE_SYSTEM = 'FILE_SYSTEM',
+  CONFIGURATION = 'CONFIGURATION',
+  UNKNOWN = 'UNKNOWN'
+}
+
+export interface ErrorDetails {
+  type: ErrorType;
+  message: string;
+  originalError?: Error;
+  context?: Record<string, any>;
+}
+
+// Logging types
+export enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR'
+}
+
+export interface LoggerOptions {
+  level: LogLevel;
+  enableConsole?: boolean;
+  enableFile?: boolean;
+  filePath?: string;
+  includeTimestamp?: boolean;
+  colorize?: boolean;
+}
+
+export interface LogEntry {
+  level: LogLevel;
+  message: string;
+  timestamp: Date;
+  context?: Record<string, any>;
+}

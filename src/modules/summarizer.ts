@@ -12,8 +12,10 @@ let modelInstance: GenerativeModel | null = null;
 function initializeModel(): GenerativeModel {
   if (!modelInstance) {
     const apiKey = getApiKey();
+    // Initialize with the latest library version
     const genAI = new GoogleGenerativeAI(apiKey);
-    modelInstance = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // Use the gemini-1.5-flash model which is confirmed to be working
+    modelInstance = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
   return modelInstance;
 }
@@ -129,6 +131,14 @@ export async function summarize(
       } catch (err: any) {
         error = err;
         retries++;
+        
+        // Log detailed error information
+        console.error('Gemini API Error:', {
+          message: err.message,
+          details: err.details || 'No details',
+          stack: err.stack,
+          statusCode: err.statusCode || 'No status code'
+        });
         
         // Wait before retry (exponential backoff)
         const delay = Math.pow(2, retries) * 1000;

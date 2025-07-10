@@ -7,7 +7,7 @@ dotenv.config();
 
 // Define configuration interfaces
 export interface ApiConfig {
-  endpoint: string;
+  // No endpoint needed as we're using the library's default
 }
 
 export interface DefaultsConfig {
@@ -59,7 +59,7 @@ function mergeConfigs(fileConfig: Partial<AppConfig>): AppConfig {
   // Default configuration
   const defaultConfig: AppConfig = {
     api: {
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+      // Using library's default endpoint
     },
     defaults: {
       summaryLength: 'medium',

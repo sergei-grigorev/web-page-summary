@@ -1,7 +1,9 @@
 import { Command } from 'commander';
 import path from 'path';
 import { getConfig } from './config';
-import { SummaryLength } from '../types';
+import { SummaryLength, LogLevel } from '../types';
+import { logger, enableDebugMode } from './utils/logger';
+import { createValidationError, handleError, AppError } from './utils/error';
 
 interface CLIOptions {
   url?: string;
@@ -10,6 +12,8 @@ interface CLIOptions {
   apiKey?: string;
   verbose?: boolean;
   config?: boolean;
+  debug?: boolean;
+  logFile?: string;
 }
 
 /**
@@ -37,7 +41,9 @@ export function initializeCLI(): Command {
       config.defaults.summaryLength
     )
     .option('-k, --api-key <key>', 'Gemini API key (overrides environment variable)')
-    .option('-v, --verbose', 'Enable verbose output', false)
+    .option('-v, --verbose', 'Enable verbose output (INFO level logs)', false)
+    .option('-d, --debug', 'Enable debug mode (DEBUG level logs)', false)
+    .option('--log-file <path>', 'Save logs to file')
     .option('-c, --config', 'Configure default settings', false);
 
   return program;
@@ -51,9 +57,37 @@ export function parseArguments(argv: string[]): CLIOptions {
   program.parse(argv);
   
   const options = program.opts<CLIOptions>();
-  validateOptions(options, program);
   
-  return options;
+  // Configure logging based on options
+  configureLogging(options);
+  
+  try {
+    validateOptions(options, program);
+    logger.debug('Command line arguments parsed successfully', { options });
+    return options;
+  } catch (error) {
+    const appError = handleError(error);
+    showError(appError.getUserFriendlyMessage(), appError);
+    process.exit(1);
+  }
+}
+
+/**
+ * Configure logging based on CLI options
+ */
+function configureLogging(options: CLIOptions): void {
+  if (options.debug) {
+    enableDebugMode();
+    logger.debug('Debug mode enabled');
+  } else if (options.verbose) {
+    logger.setLevel(LogLevel.INFO);
+    logger.info('Verbose mode enabled');
+  }
+
+  if (options.logFile) {
+    logger.setFileLogging(true, options.logFile);
+    logger.info(`Log file enabled: ${options.logFile}`);
+  }
 }
 
 /**
@@ -67,45 +101,47 @@ function validateOptions(options: CLIOptions, program: Command): void {
 
   // URL is required unless we're just showing config
   if (!options.url) {
-    console.error('Error: URL is required');
+    logger.error('URL is required');
     program.help();
+    throw createValidationError('MISSING_REQUIRED_FIELD', undefined, { field: 'url' });
   }
 
   // Validate URL format
   try {
     new URL(options.url as string);
   } catch (error) {
-    console.error(`Error: Invalid URL format: ${options.url}`);
-    process.exit(1);
+    logger.error(`Invalid URL format: ${options.url}`, { error });
+    throw createValidationError('INVALID_FORMAT', error as Error, { url: options.url });
   }
 
   // Validate summary length
   if (options.length && !['short', 'medium', 'long'].includes(options.length)) {
-    console.error(`Error: Invalid summary length: ${options.length}. Must be one of: short, medium, long`);
-    process.exit(1);
+    logger.error(`Invalid summary length: ${options.length}`, { validOptions: ['short', 'medium', 'long'] });
+    throw createValidationError('INVALID_OPTION', undefined, { 
+      option: 'length', 
+      value: options.length, 
+      validValues: ['short', 'medium', 'long'] 
+    });
   }
 }
 
 /**
  * Display progress message to user
  */
-export function showProgress(message: string, verbose = false): void {
-  console.log(`🔄 ${message}`);
+export function showProgress(message: string, context?: Record<string, any>): void {
+  logger.info(`🔄 ${message}`, context);
 }
 
 /**
  * Display success message to user
  */
-export function showSuccess(message: string): void {
-  console.log(`✅ ${message}`);
+export function showSuccess(message: string, context?: Record<string, any>): void {
+  logger.info(`✅ ${message}`, context);
 }
 
 /**
  * Display error message to user
  */
-export function showError(message: string, error?: Error): void {
-  console.error(`❌ ${message}`);
-  if (error && process.env.NODE_ENV === 'development') {
-    console.error(error);
-  }
+export function showError(message: string, error?: Error | AppError): void {
+  logger.error(`❌ ${message}`, error instanceof AppError ? error.getDebugInfo() : error);
 }
