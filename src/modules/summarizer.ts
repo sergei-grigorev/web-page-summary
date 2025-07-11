@@ -1,23 +1,20 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { SummarizerOptions, SummaryResult, SummaryLength } from '../types';
 import { getApiKey } from './config';
 import { showProgress, showError } from './cli';
 
 // Cache for the Gemini model instance
-let modelInstance: GenerativeModel | null = null;
+let aiInstance: GoogleGenAI | null = null;
 
 /**
  * Initialize the Gemini model
  */
-function initializeModel(): GenerativeModel {
-  if (!modelInstance) {
+function initializeModel() {
+  if (!aiInstance) {
     const apiKey = getApiKey();
-    // Initialize with the latest library version
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Use the gemini-1.5-flash model which is confirmed to be working
-    modelInstance = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    aiInstance = new GoogleGenAI({ apiKey });
   }
-  return modelInstance;
+  return aiInstance;
 }
 
 /**
@@ -103,7 +100,7 @@ export async function summarize(
   showProgress(`Generating ${options.length} summary with Gemini API`);
   
   try {
-    const model = initializeModel();
+    const ai = initializeModel();
     const prompt = generatePrompt(content, options);
     
     // Set up retry logic
@@ -113,9 +110,24 @@ export async function summarize(
     
     while (retries < maxRetries) {
       try {
-        const result = await model.generateContent(prompt);
-        const response = result.response;
-        const summaryText = response.text();
+        const result = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ],
+          config: {
+            temperature: 0.2,
+            topP: 0.95,
+            topK: 40,
+          },
+        });
+        
+        // Get the response text from the first candidate
+        const response = result;
+        const summaryText = response.text || '';
         
         // Process the summary
         const { summary, keyPoints } = extractKeyPoints(summaryText);
