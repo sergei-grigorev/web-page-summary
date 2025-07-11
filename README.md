@@ -1,6 +1,6 @@
 # TypeScript Web Article Summarizer CLI
 
-A powerful command-line tool that processes web articles by scraping their content, cleaning it, and generating AI-powered summaries in Markdown format using Google's Gemini API with the gemini-1.5-flash model.
+A powerful command-line tool that processes web articles by scraping their content, cleaning it, and generating AI-powered summaries in Markdown format using Google's Gemini API with the gemini-2.5-flash model.
 
 ## Features
 
@@ -167,7 +167,7 @@ Create or modify the configuration file at `config/default.json`:
 ```json
 {
   "api": {
-    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
   },
   "defaults": {
     "summaryLength": "medium",
@@ -240,7 +240,7 @@ summarizer/
 1. **API Key Issues**
    - Make sure your Gemini API key is correctly set in the `.env` file or passed via command line with `--api-key`
    - Verify that your API key has not expired or reached its quota limit
-   - The project uses the gemini-1.5-flash model which has been confirmed to work with the current API configuration
+   - The project uses the gemini-2.5-flash model which has been confirmed to work with the current API configuration
 
 2. **Content Extraction Problems**
    - Some websites may block scrapers or have complex layouts that are difficult to parse
