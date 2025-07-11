@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
+import { config as dotenvConfig } from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenvConfig();
 
 // Define configuration interfaces
 export interface ApiConfig {

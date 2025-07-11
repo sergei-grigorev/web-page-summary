@@ -41,10 +41,15 @@ export function initializeCLI(): Command {
       config.defaults.summaryLength
     )
     .option('-k, --api-key <key>', 'Gemini API key (overrides environment variable)')
-    .option('-v, --verbose', 'Enable verbose output (INFO level logs)', false)
-    .option('-d, --debug', 'Enable debug mode (DEBUG level logs)', false)
+    .option('-v, --verbose', 'Enable verbose output (INFO level logs)')
+    .option('-d, --debug', 'Enable debug mode (DEBUG level logs)')
     .option('--log-file <path>', 'Save logs to file')
-    .option('-c, --config', 'Configure default settings', false);
+    .option('-c, --config', 'Configure default settings');
+    
+  // Set default values for boolean options in commander v14
+  program.setOptionValueWithSource('verbose', false, 'default');
+  program.setOptionValueWithSource('debug', false, 'default');
+  program.setOptionValueWithSource('config', false, 'default');
 
   return program;
 }
