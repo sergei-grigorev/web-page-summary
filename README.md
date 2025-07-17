@@ -104,7 +104,7 @@ The CLI supports the following options:
 
 You can also use the summarizer as a library in your Node.js projects:
 
-```typescript
+```javascript
 import { summarizeArticle } from 'article-summarizer';
 
 async function main() {
@@ -197,6 +197,9 @@ npm test
 
 # Lint code
 npm run lint
+
+# Build and test before publishing
+npm run prepublishOnly
 ```
 
 ## Project Structure
@@ -204,26 +207,27 @@ npm run lint
 ```
 summarizer/
 ├── src/
-│   ├── index.ts                # Main CLI entry point
+│   ├── index.js                # Main CLI entry point
+│   ├── lib.js                  # Library interface
+│   ├── constants.js            # Constants and defaults
 │   ├── types/
-│   │   └── index.ts            # Type definitions
-│   ├── modules/
-│   │   ├── cli.ts              # CLI argument parser
-│   │   ├── config.ts           # Configuration handler
-│   │   ├── scraper.ts          # Web content scraper
-│   │   ├── extractor.ts        # Content extraction & cleaning
-│   │   ├── summarizer.ts       # AI summarization service
-│   │   ├── converter.ts        # Markdown conversion
-│   │   └── utils/
-│   │       ├── logger.ts       # Logging utilities
-│   │       └── error.ts        # Error handling utilities
-│   └── constants.ts            # Constants and defaults
+│   │   └── index.js            # JSDoc type definitions
+│   └── modules/
+│       ├── cli.js              # CLI argument parser
+│       ├── config.js           # Configuration handler
+│       ├── scraper.js          # Web content scraper
+│       ├── extractor.js        # Content extraction & cleaning
+│       ├── summarizer.js       # AI summarization service
+│       ├── converter.js        # Markdown conversion
+│       └── utils/
+│           ├── logger.js       # Logging utilities
+│           └── error.js        # Error handling utilities
 ├── config/
 │   └── default.json            # Default configuration
 ├── tests/                      # Unit & integration tests
-├── dist/                       # Compiled JavaScript output
+├── summaries/                  # Default output directory
 ├── package.json
-├── tsconfig.json
+├── eslint.config.js            # ESLint configuration
 ├── .env.example                # Template for environment variables
 └── README.md
 ```
