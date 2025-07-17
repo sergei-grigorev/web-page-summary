@@ -1,4 +1,4 @@
-import { scrapeUrl } from '../src/modules/scraper';
+import { scrapeUrl } from '../src/modules/scraper.js';
 
 async function testScraper() {
   try {
@@ -18,11 +18,11 @@ async function testScraper() {
       await scrapeUrl('invalid-url');
       console.log('Error: This should have failed!');
     } catch (error) {
-      console.log('Expected error caught:', (error as Error).message);
+      console.log('Expected error caught:', error.message);
     }
     
   } catch (error) {
-    console.error('Test failed:', (error as Error).message);
+    console.error('Test failed:', error.message);
   }
 }
 

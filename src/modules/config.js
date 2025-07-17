@@ -5,45 +5,52 @@ import { config as dotenvConfig } from 'dotenv';
 // Load environment variables from .env file
 dotenvConfig();
 
-// Define configuration interfaces
-export interface ApiConfig {
-  // No endpoint needed as we're using the library's default
-}
+/**
+ * @typedef {Object} ApiConfig
+ * API configuration (using library's default endpoint)
+ */
 
-export interface DefaultsConfig {
-  summaryLength: 'short' | 'medium' | 'long';
-  outputFormat: 'markdown' | 'text';
-  outputPath: string;
-}
+/**
+ * @typedef {Object} DefaultsConfig
+ * @property {'short' | 'medium' | 'long'} summaryLength - Default summary length
+ * @property {'markdown' | 'text'} outputFormat - Default output format
+ * @property {string} outputPath - Default output path
+ */
 
-export interface ScraperConfig {
-  timeout: number;
-  retries: number;
-  userAgent: string;
-}
+/**
+ * @typedef {Object} ScraperConfig
+ * @property {number} timeout - Request timeout in milliseconds
+ * @property {number} retries - Number of retry attempts
+ * @property {string} userAgent - User agent string
+ */
 
-export interface ExtractorConfig {
-  removeSelectors: string[];
-  includeImages: boolean;
-  preserveLinks: boolean;
-}
+/**
+ * @typedef {Object} ExtractorConfig
+ * @property {string[]} removeSelectors - CSS selectors to remove
+ * @property {boolean} includeImages - Whether to include images
+ * @property {boolean} preserveLinks - Whether to preserve links
+ */
 
-export interface AppConfig {
-  api: ApiConfig;
-  defaults: DefaultsConfig;
-  scraper: ScraperConfig;
-  extractor: ExtractorConfig;
-}
+/**
+ * @typedef {Object} AppConfig
+ * @property {ApiConfig} api - API configuration
+ * @property {DefaultsConfig} defaults - Default settings
+ * @property {ScraperConfig} scraper - Scraper configuration
+ * @property {ExtractorConfig} extractor - Extractor configuration
+ */
 
 // Default configuration paths
 const CONFIG_DIR = path.join(process.cwd(), 'config');
 const DEFAULT_CONFIG_PATH = path.join(CONFIG_DIR, 'default.json');
 
-// Load configuration from file
-function loadConfigFromFile(): Partial<AppConfig> {
+/**
+ * Load configuration from file
+ * @returns {Partial<AppConfig>} Partial configuration object
+ */
+function loadConfigFromFile() {
   try {
     if (fs.existsSync(DEFAULT_CONFIG_PATH)) {
-      const config = JSON.parse(fs.readFileSync(DEFAULT_CONFIG_PATH, 'utf-8')) as Partial<AppConfig>;
+      const config = JSON.parse(fs.readFileSync(DEFAULT_CONFIG_PATH, 'utf-8'));
       return config;
     }
     console.warn(`Warning: Config file not found at ${DEFAULT_CONFIG_PATH}. Using default configuration.`);
@@ -54,10 +61,14 @@ function loadConfigFromFile(): Partial<AppConfig> {
   }
 }
 
-// Merge configurations with environment variables having higher priority
-function mergeConfigs(fileConfig: Partial<AppConfig>): AppConfig {
+/**
+ * Merge configurations with environment variables having higher priority
+ * @param {Partial<AppConfig>} fileConfig - Configuration from file
+ * @returns {AppConfig} Merged configuration
+ */
+function mergeConfigs(fileConfig) {
   // Default configuration
-  const defaultConfig: AppConfig = {
+  const defaultConfig = {
     api: {
       // Using library's default endpoint
     },
@@ -88,14 +99,14 @@ function mergeConfigs(fileConfig: Partial<AppConfig>): AppConfig {
   }
 
   if (process.env.DEFAULT_SUMMARY_LENGTH) {
-    const length = process.env.DEFAULT_SUMMARY_LENGTH as 'short' | 'medium' | 'long';
+    const length = process.env.DEFAULT_SUMMARY_LENGTH;
     if (['short', 'medium', 'long'].includes(length)) {
       mergedConfig.defaults.summaryLength = length;
     }
   }
 
   if (process.env.DEFAULT_OUTPUT_FORMAT) {
-    const format = process.env.DEFAULT_OUTPUT_FORMAT as 'markdown' | 'text';
+    const format = process.env.DEFAULT_OUTPUT_FORMAT;
     if (['markdown', 'text'].includes(format)) {
       mergedConfig.defaults.outputFormat = format;
     }
@@ -126,11 +137,20 @@ function mergeConfigs(fileConfig: Partial<AppConfig>): AppConfig {
 const fileConfig = loadConfigFromFile();
 const config = mergeConfigs(fileConfig);
 
-export function getConfig(): AppConfig {
+/**
+ * Get the application configuration
+ * @returns {AppConfig} Application configuration
+ */
+export function getConfig() {
   return config;
 }
 
-export function getApiKey(): string {
+/**
+ * Get the API key from environment variables
+ * @returns {string} API key
+ * @throws {Error} If API key is not set
+ */
+export function getApiKey() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is not set. Please add it to your .env file.');

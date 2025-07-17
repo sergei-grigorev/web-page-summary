@@ -1,16 +1,15 @@
-import { load, CheerioAPI, Cheerio } from 'cheerio';
-import { ExtractorOptions, ExtractedContent } from '../types';
-import { getConfig } from './config';
-import { showProgress } from './cli';
+import { load } from 'cheerio';
+import { getConfig } from './config.js';
+import { showProgress } from './cli.js';
 
 /**
  * Extract main content from HTML
+ * @param {string} html - HTML content to extract from
+ * @param {string} url - URL of the page
+ * @param {Partial<import('../types/index.js').ExtractorOptions>} [options] - Optional extractor configuration
+ * @returns {Promise<import('../types/index.js').ExtractedContent>} Extracted content
  */
-export async function extractContent(
-  html: string,
-  url: string,
-  options?: Partial<ExtractorOptions>
-): Promise<ExtractedContent> {
+export async function extractContent(html, url, options) {
   const config = getConfig();
   const extractorConfig = { ...config.extractor, ...options };
   
@@ -51,8 +50,10 @@ export async function extractContent(
 
 /**
  * Extract title from the document
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @returns {string | undefined} Extracted title
  */
-function extractTitle($: CheerioAPI): string | undefined {
+function extractTitle($) {
   // Try different title selectors in order of preference
   const titleSelectors = [
     'h1.article-title',
@@ -79,11 +80,10 @@ function extractTitle($: CheerioAPI): string | undefined {
 
 /**
  * Remove unwanted elements from the document
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @param {string[]} [selectors=[]] - Additional selectors to remove
  */
-function removeUnwantedElements(
-  $: CheerioAPI,
-  selectors: string[] = []
-): void {
+function removeUnwantedElements($, selectors = []) {
   // Default elements to remove
   const defaultSelectors = [
     'script',
@@ -119,8 +119,10 @@ function removeUnwantedElements(
 
 /**
  * Find the main content element in the document
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @returns {import('cheerio').Cheerio<any>} Main content element
  */
-function findMainContent($: CheerioAPI): Cheerio<any> {
+function findMainContent($) {
   // Try different content selectors in order of preference
   const contentSelectors = [
     'article',
@@ -143,9 +145,9 @@ function findMainContent($: CheerioAPI): Cheerio<any> {
   }
   
   // Fallback: Use body and try to find the element with the most paragraphs
-  const paragraphContainers: {element: any; count: number}[] = [];
+  const paragraphContainers = [];
   
-  $('body').find('div, section, main').each((_: number, element: any) => {
+  $('body').find('div, section, main').each((_, element) => {
     const paragraphCount = $(element).find('p').length;
     if (paragraphCount > 2) {
       paragraphContainers.push({ element, count: paragraphCount });
@@ -165,14 +167,14 @@ function findMainContent($: CheerioAPI): Cheerio<any> {
 
 /**
  * Clean and normalize content
+ * @param {import('cheerio').Cheerio<any>} content - Content element to clean
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @param {import('../types/index.js').ExtractorOptions} options - Extractor options
+ * @returns {import('cheerio').Cheerio<any>} Cleaned content element
  */
-function cleanContent(
-  content: Cheerio<any>,
-  $: CheerioAPI,
-  options: ExtractorOptions
-): Cheerio<any> {
+function cleanContent(content, $, options) {
   // Remove empty paragraphs
-  content.find('p').each((_: number, element: any) => {
+  content.find('p').each((_, element) => {
     const paragraph = $(element);
     if (paragraph.text().trim() === '') {
       paragraph.remove();
@@ -186,7 +188,7 @@ function cleanContent(
   
   // Handle links based on options
   if (!options.preserveLinks) {
-    content.find('a').each((_: number, element: any) => {
+    content.find('a').each((_, element) => {
       const link = $(element);
       const text = link.text();
       link.replaceWith(text);
@@ -194,7 +196,7 @@ function cleanContent(
   }
   
   // Normalize whitespace
-  content.find('*').contents().each((_: number, element: any) => {
+  content.find('*').contents().each((_, element) => {
     if (element.type === 'text') {
       const text = $(element).text().replace(/\s+/g, ' ').trim();
       element.data = text;
@@ -206,8 +208,10 @@ function cleanContent(
 
 /**
  * Extract author information
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @returns {string | undefined} Author name
  */
-function extractAuthor($: CheerioAPI): string | undefined {
+function extractAuthor($) {
   // Try different author selectors
   const authorSelectors = [
     'meta[name="author"]',
@@ -237,8 +241,10 @@ function extractAuthor($: CheerioAPI): string | undefined {
 
 /**
  * Extract publication date
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @returns {Date | undefined} Publication date
  */
-function extractPublishDate($: CheerioAPI): Date | undefined {
+function extractPublishDate($) {
   // Try different date selectors
   const dateSelectors = [
     'meta[name="date"]',
@@ -256,7 +262,7 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
       if (metaDate) {
         try {
           return new Date(metaDate);
-        } catch (e) {
+        } catch (_e) {
           // Invalid date format, try next selector
         }
       }
@@ -267,7 +273,7 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
         if (datetime) {
           try {
             return new Date(datetime);
-          } catch (e) {
+          } catch (_e) {
             // Invalid date format, try next selector
           }
         }
@@ -277,7 +283,7 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
       if (dateElement.length > 0) {
         try {
           return new Date(dateElement.text().trim());
-        } catch (e) {
+        } catch (_e) {
           // Invalid date format, try next selector
         }
       }
@@ -289,8 +295,10 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
 
 /**
  * Extract excerpt or summary
+ * @param {import('cheerio').CheerioAPI} $ - Cheerio instance
+ * @returns {string | undefined} Excerpt text
  */
-function extractExcerpt($: CheerioAPI): string | undefined {
+function extractExcerpt($) {
   // Try different excerpt selectors
   const excerptSelectors = [
     'meta[name="description"]',

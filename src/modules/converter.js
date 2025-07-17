@@ -1,16 +1,15 @@
 import TurndownService from 'turndown';
 import fs from 'fs';
 import path from 'path';
-import { ConverterOptions, ConversionResult } from '../types';
-import { showProgress, showSuccess, showError } from './cli';
+import { showProgress, showSuccess, showError } from './cli.js';
 
 /**
  * Convert HTML content to Markdown
+ * @param {string} content - HTML content to convert
+ * @param {Partial<import('../types/index.js').ConverterOptions>} [options] - Converter options
+ * @returns {import('../types/index.js').ConversionResult} Conversion result
  */
-export function convertToMarkdown(
-  content: string,
-  options?: Partial<ConverterOptions>
-): ConversionResult {
+export function convertToMarkdown(content, options) {
   const converterOptions = { ...getDefaultOptions(), ...options };
   
   showProgress('Converting content to Markdown');
@@ -26,15 +25,16 @@ export function convertToMarkdown(
     metadata: converterOptions.includeMetadata ? {
       title: '',
       url: '',
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
     } : undefined,
   };
 }
 
 /**
  * Get default converter options
+ * @returns {import('../types/index.js').ConverterOptions} Default options
  */
-function getDefaultOptions(): ConverterOptions {
+function getDefaultOptions() {
   return {
     includeMetadata: true,
     codeBlockStyle: 'fenced',
@@ -45,8 +45,10 @@ function getDefaultOptions(): ConverterOptions {
 
 /**
  * Configure Turndown service with options
+ * @param {import('../types/index.js').ConverterOptions} options - Converter options
+ * @returns {TurndownService} Configured Turndown service
  */
-function configureTurndown(options: ConverterOptions): TurndownService {
+function configureTurndown(options) {
   const turndownService = new TurndownService({
     headingStyle: options.headingStyle,
     codeBlockStyle: options.codeBlockStyle,
@@ -56,9 +58,9 @@ function configureTurndown(options: ConverterOptions): TurndownService {
   // Add custom rules
   turndownService.addRule('codeBlocks', {
     filter: ['pre'],
-    replacement: function(content: string, _node: any): string {
-      return '```\n' + content + '\n```';
-    }
+    replacement(content, _node) {
+      return `\`\`\`\n${  content  }\n\`\`\``;
+    },
   });
   
   return turndownService;
@@ -66,11 +68,11 @@ function configureTurndown(options: ConverterOptions): TurndownService {
 
 /**
  * Format the final Markdown output with metadata
+ * @param {string} markdown - Markdown content
+ * @param {Record<string, any>} [metadata={}] - Metadata object
+ * @returns {string} Formatted output
  */
-export function formatOutput(
-  markdown: string,
-  metadata: Record<string, any> = {}
-): string {
+export function formatOutput(markdown, metadata = {}) {
   const { title, url, date } = metadata;
   const formattedDate = date ? new Date(date).toLocaleDateString() : new Date().toLocaleDateString();
   
@@ -104,11 +106,11 @@ export function formatOutput(
 
 /**
  * Save Markdown content to file
+ * @param {string} content - Content to save
+ * @param {string} filePath - File path to save to
+ * @returns {Promise<string>} Saved file path
  */
-export async function saveToFile(
-  content: string,
-  filePath: string
-): Promise<string> {
+export async function saveToFile(content, filePath) {
   try {
     // Ensure the directory exists
     const directory = path.dirname(filePath);

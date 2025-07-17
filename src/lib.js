@@ -1,37 +1,37 @@
-import { scrapeUrl } from './modules/scraper';
-import { extractContent } from './modules/extractor';
-import { summarize } from './modules/summarizer';
-import { convertToMarkdown, formatOutput } from './modules/converter';
-import { SummarizerOptions, SummaryLength } from './types';
-import { logger } from './modules/utils/logger';
-import { handleError } from './modules/utils/error';
+import { scrapeUrl } from './modules/scraper.js';
+import { extractContent } from './modules/extractor.js';
+import { summarize } from './modules/summarizer.js';
+import { convertToMarkdown, formatOutput } from './modules/converter.js';
+import { logger } from './modules/utils/logger.js';
+import { handleError } from './modules/utils/error.js';
 
-export interface SummarizeArticleOptions {
-  url: string;
-  length?: SummaryLength;
-  apiKey?: string;
-  includeKeyPoints?: boolean;
-}
+/**
+ * @typedef {Object} SummarizeArticleOptions
+ * @property {string} url - URL to summarize
+ * @property {import('./types/index.js').SummaryLength} [length] - Summary length
+ * @property {string} [apiKey] - API key for Gemini
+ * @property {boolean} [includeKeyPoints] - Whether to include key points
+ */
 
-export interface SummarizeArticleResult {
-  markdown: string;
-  summary: string;
-  keyPoints?: string[];
-  originalWordCount: number;
-  summaryWordCount: number;
-  metadata: {
-    title: string;
-    url: string;
-    date: string;
-  };
-}
+/**
+ * @typedef {Object} SummarizeArticleResult
+ * @property {string} markdown - Formatted markdown output
+ * @property {string} summary - Summary text
+ * @property {string[]} [keyPoints] - Key points from the article
+ * @property {number} originalWordCount - Original article word count
+ * @property {number} summaryWordCount - Summary word count
+ * @property {Object} metadata - Article metadata
+ * @property {string} metadata.title - Article title
+ * @property {string} metadata.url - Article URL
+ * @property {string} metadata.date - Summarization date
+ */
 
 /**
  * Summarize an article from a URL - main library function
+ * @param {SummarizeArticleOptions} options - Summarization options
+ * @returns {Promise<SummarizeArticleResult>} Summary result
  */
-export async function summarizeArticle(
-  options: SummarizeArticleOptions
-): Promise<SummarizeArticleResult> {
+export async function summarizeArticle(options) {
   try {
     logger.debug('Starting article summarization', { url: options.url });
     
@@ -47,7 +47,7 @@ export async function summarizeArticle(
     const extractedContent = await extractContent(scraperResult.html, scraperResult.url);
     
     // 3. Generate AI summary
-    const summarizerOptions: SummarizerOptions = {
+    const summarizerOptions = {
       length: options.length || 'medium',
       includeKeyPoints: options.includeKeyPoints ?? true,
     };

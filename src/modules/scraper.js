@@ -1,42 +1,45 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ScraperOptions, ScraperResult } from '../types';
-import { getConfig } from './config';
-import { showProgress } from './cli';
-import { createNetworkError, handleError } from './utils/error';
+import axios from 'axios';
+import { getConfig } from './config.js';
+import { showProgress } from './cli.js';
+import { createNetworkError, handleError } from './utils/error.js';
 
 /**
  * Validates and normalizes a URL
- * @param url The URL to validate and normalize
- * @returns The normalized URL string
- * @throws AppError if the URL is invalid
+ * @param {string} url - The URL to validate and normalize
+ * @returns {string} The normalized URL string
+ * @throws {import('./utils/error.js').AppError} If the URL is invalid
  */
-export function validateUrl(url: string): string {
+export function validateUrl(url) {
   try {
     // Handle cases where URL might be missing protocol
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
+      url = `https://${  url}`;
     }
     
     const parsedUrl = new URL(url);
     return parsedUrl.toString();
   } catch (error) {
-    throw createNetworkError('INVALID_URL', error as Error, { url });
+    throw createNetworkError('INVALID_URL', error, { url });
   }
 }
 
 /**
  * Extracts page title from HTML content
+ * @param {string} html - HTML content
+ * @returns {string | undefined} Page title or undefined
  */
-function extractTitle(html: string): string | undefined {
+function extractTitle(html) {
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   return titleMatch ? titleMatch[1].trim() : undefined;
 }
 
 /**
  * Extracts metadata from HTML content
+ * @param {string} html - HTML content
+ * @returns {Record<string, string>} Metadata object
  */
-function extractMetadata(html: string): Record<string, string> {
-  const metadata: Record<string, string> = {};
+function extractMetadata(html) {
+  const metadata = {};
   
   // Extract meta tags
   const metaRegex = /<meta\s+(?:name|property)="([^"]+)"\s+content="([^"]+)"[^>]*>/gi;
@@ -54,15 +57,12 @@ function extractMetadata(html: string): Record<string, string> {
 
 /**
  * Scrapes content from a URL
- * @param url The URL to scrape content from
- * @param options Optional scraper configuration options
- * @returns A promise resolving to the scraped content result
- * @throws AppError if scraping fails
+ * @param {string} url - The URL to scrape content from
+ * @param {Partial<import('../types/index.js').ScraperOptions>} [options] - Optional scraper configuration options
+ * @returns {Promise<import('../types/index.js').ScraperResult>} A promise resolving to the scraped content result
+ * @throws {import('./utils/error.js').AppError} If scraping fails
  */
-export async function scrapeUrl(
-  url: string, 
-  options?: Partial<ScraperOptions>
-): Promise<ScraperResult> {
+export async function scrapeUrl(url, options) {
   const config = getConfig();
   const scraperConfig = { ...config.scraper, ...options };
   
@@ -73,7 +73,7 @@ export async function scrapeUrl(
     showProgress(`Fetching content from ${normalizedUrl}`);
     
     // Configure axios request
-    const requestConfig: AxiosRequestConfig = {
+    const requestConfig = {
       timeout: scraperConfig.timeout,
       headers: {
         'User-Agent': scraperConfig.userAgent,
@@ -84,16 +84,16 @@ export async function scrapeUrl(
     };
     
     // Make the HTTP request with retry logic
-    let response: AxiosResponse | null = null;
+    let response = null;
     let attempts = 0;
-    let lastError: Error | null = null;
+    let lastError = null;
     
     while (attempts <= scraperConfig.retries) {
       try {
         response = await axios.get(normalizedUrl, requestConfig);
         break;
       } catch (error) {
-        lastError = error as Error;
+        lastError = error;
         attempts++;
         
         if (attempts > scraperConfig.retries) {
@@ -118,7 +118,7 @@ export async function scrapeUrl(
             throw createNetworkError('CONNECTION_FAILED', lastError, { 
               url: normalizedUrl, 
               status: lastError.response.status,
-              statusText: lastError.response.statusText 
+              statusText: lastError.response.statusText, 
             });
           }
         }
@@ -134,7 +134,7 @@ export async function scrapeUrl(
     if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
       throw createNetworkError('INVALID_RESPONSE', new Error('Response is not HTML content'), { 
         url: normalizedUrl,
-        contentType
+        contentType,
       });
     }
     
@@ -150,7 +150,7 @@ export async function scrapeUrl(
     };
   } catch (error) {
     // If it's already an AppError, just rethrow it
-    if ((error as any).name === 'AppError') {
+    if (error.name === 'AppError') {
       throw error;
     }
     
@@ -163,7 +163,7 @@ export async function scrapeUrl(
         // Request made but no response received
         throw createNetworkError('CONNECTION_FAILED', error, { 
           url,
-          timeout: scraperConfig.timeout 
+          timeout: scraperConfig.timeout, 
         });
       }
     }
@@ -175,8 +175,12 @@ export async function scrapeUrl(
 
 /**
  * Handles Axios response errors and converts them to appropriate AppErrors
+ * @param {any} error - Axios error object
+ * @param {string} url - URL that caused the error
+ * @param {import('../types/index.js').ScraperOptions} _scraperConfig - Scraper configuration (unused)
+ * @throws {import('./utils/error.js').AppError} Always throws an AppError
  */
-function handleAxiosResponseError(error: any, url: string, _scraperConfig: ScraperOptions): never {
+function handleAxiosResponseError(error, url, _scraperConfig) {
   const status = error.response?.status;
   const statusText = error.response?.statusText;
   
@@ -185,25 +189,25 @@ function handleAxiosResponseError(error: any, url: string, _scraperConfig: Scrap
     throw createNetworkError('CONNECTION_FAILED', error, { 
       url, 
       status,
-      message: 'Page not found' 
+      message: 'Page not found', 
     });
   } else if (status === 403) {
     throw createNetworkError('CONNECTION_FAILED', error, { 
       url, 
       status,
-      message: 'Access forbidden' 
+      message: 'Access forbidden', 
     });
   } else if (status >= 500) {
     throw createNetworkError('CONNECTION_FAILED', error, { 
       url, 
       status,
-      message: 'Server error' 
+      message: 'Server error', 
     });
   } else {
     throw createNetworkError('CONNECTION_FAILED', error, { 
       url, 
       status,
-      statusText 
+      statusText, 
     });
   }
 }
