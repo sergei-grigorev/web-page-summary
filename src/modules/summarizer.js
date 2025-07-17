@@ -1,10 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
-import { SummarizerOptions, SummaryResult, SummaryLength } from '../types';
-import { getApiKey } from './config';
-import { showProgress, showError } from './cli';
+import { getApiKey } from './config.js';
+import { showProgress, showError } from './cli.js';
 
 // Cache for the Gemini model instance
-let aiInstance: GoogleGenAI | null = null;
+let aiInstance = null;
 
 /**
  * Initialize the Gemini model
@@ -19,8 +18,11 @@ function initializeModel() {
 
 /**
  * Generate a prompt for the AI based on content and options
+ * @param {string} content - Content to summarize
+ * @param {import('../types/index.js').SummarizerOptions} options - Summarizer options
+ * @returns {string} Generated prompt
  */
-function generatePrompt(content: string, options: SummarizerOptions): string {
+function generatePrompt(content, options) {
   const lengthInstructions = getLengthInstructions(options.length);
   const keyPointsInstruction = options.includeKeyPoints ? 
     'Include a section with 3-5 key points from the article.' : '';
@@ -38,31 +40,37 @@ function generatePrompt(content: string, options: SummarizerOptions): string {
 
 /**
  * Get specific instructions based on summary length
+ * @param {import('../types/index.js').SummaryLength} length - Summary length
+ * @returns {string} Length instructions
  */
-function getLengthInstructions(length: SummaryLength): string {
+function getLengthInstructions(length) {
   switch (length) {
-    case 'short':
-      return 'in a very concise way (about 1-2 paragraphs)';
-    case 'medium':
-      return 'with moderate detail (about 3-4 paragraphs)';
-    case 'long':
-      return 'comprehensively, covering all important aspects (about 5-7 paragraphs)';
-    default:
-      return 'with moderate detail';
+  case 'short':
+    return 'in a very concise way (about 1-2 paragraphs)';
+  case 'medium':
+    return 'with moderate detail (about 3-4 paragraphs)';
+  case 'long':
+    return 'comprehensively, covering all important aspects (about 5-7 paragraphs)';
+  default:
+    return 'with moderate detail';
   }
 }
 
 /**
  * Count words in a text
+ * @param {string} text - Text to count words in
+ * @returns {number} Word count
  */
-function countWords(text: string): number {
+function countWords(text) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
 /**
  * Extract key points from summary if available
+ * @param {string} summary - Summary text
+ * @returns {{summary: string, keyPoints: string[] | undefined}} Extracted summary and key points
  */
-function extractKeyPoints(summary: string): { summary: string; keyPoints: string[] | undefined } {
+function extractKeyPoints(summary) {
   // Look for key points section
   const keyPointsMatch = summary.match(/key points:|main points:|key takeaways:|main takeaways:/i);
   
@@ -81,7 +89,7 @@ function extractKeyPoints(summary: string): { summary: string; keyPoints: string
     
     return {
       summary: mainSummary,
-      keyPoints: keyPoints.length > 0 ? keyPoints : undefined
+      keyPoints: keyPoints.length > 0 ? keyPoints : undefined,
     };
   }
   
@@ -90,11 +98,11 @@ function extractKeyPoints(summary: string): { summary: string; keyPoints: string
 
 /**
  * Summarize content using Gemini API
+ * @param {string} content - Content to summarize
+ * @param {import('../types/index.js').SummarizerOptions} options - Summarizer options
+ * @returns {Promise<import('../types/index.js').SummaryResult>} Summary result
  */
-export async function summarize(
-  content: string,
-  options: SummarizerOptions
-): Promise<SummaryResult> {
+export async function summarize(content, options) {
   const originalWordCount = countWords(content);
   
   showProgress(`Generating ${options.length} summary with Gemini API`);
@@ -106,7 +114,7 @@ export async function summarize(
     // Set up retry logic
     const maxRetries = 3;
     let retries = 0;
-    let error: Error | null = null;
+    let error = null;
     
     while (retries < maxRetries) {
       try {
@@ -115,8 +123,8 @@ export async function summarize(
           contents: [
             {
               role: 'user',
-              parts: [{ text: prompt }]
-            }
+              parts: [{ text: prompt }],
+            },
           ],
           config: {
             temperature: 0.2,
@@ -139,7 +147,7 @@ export async function summarize(
           originalWordCount,
           summaryWordCount,
         };
-      } catch (err: any) {
+      } catch (err) {
         error = err;
         retries++;
         
@@ -148,19 +156,19 @@ export async function summarize(
           message: err.message,
           details: err.details || 'No details',
           stack: err.stack,
-          statusCode: err.statusCode || 'No status code'
+          statusCode: err.statusCode || 'No status code',
         });
         
         // Wait before retry (exponential backoff)
         const delay = Math.pow(2, retries) * 1000;
         showProgress(`API error, retrying in ${delay}ms (${retries}/${maxRetries})`);
-        await new Promise<void>(resolve => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
     // If we get here, all retries failed
     throw error || new Error('Failed to generate summary after multiple attempts');
-  } catch (error: any) {
+  } catch (error) {
     showError('Failed to generate summary', error);
     
     // Provide a fallback summary

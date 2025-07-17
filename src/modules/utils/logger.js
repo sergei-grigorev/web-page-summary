@@ -1,16 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import { LogLevel, LoggerOptions, LogEntry } from '../../types';
-import { DEFAULT_LOGGER_OPTIONS, LOG_COLORS, LOG_SYMBOLS } from '../../constants';
+import { LogLevel } from '../../types/index.js';
+import { DEFAULT_LOGGER_OPTIONS, LOG_COLORS, LOG_SYMBOLS } from '../../constants.js';
 
 /**
  * Logger class for handling application logs
  */
 export class Logger {
-  private static instance: Logger;
-  private options: LoggerOptions;
-
-  private constructor(options: Partial<LoggerOptions> = {}) {
+  /** @type {Logger} */
+  static instance;
+  
+  /**
+   * @param {Partial<import('../../types/index.js').LoggerOptions>} [options={}] - Logger options
+   */
+  constructor(options = {}) {
+    /** @type {import('../../types/index.js').LoggerOptions} */
     this.options = { ...DEFAULT_LOGGER_OPTIONS, ...options };
     
     // Create log directory if file logging is enabled
@@ -24,8 +28,10 @@ export class Logger {
 
   /**
    * Get logger instance (singleton)
+   * @param {Partial<import('../../types/index.js').LoggerOptions>} [options] - Logger options
+   * @returns {Logger} Logger instance
    */
-  public static getInstance(options?: Partial<LoggerOptions>): Logger {
+  static getInstance(options) {
     if (!Logger.instance) {
       Logger.instance = new Logger(options);
     } else if (options) {
@@ -38,36 +44,46 @@ export class Logger {
 
   /**
    * Log a debug message
+   * @param {string} message - Debug message
+   * @param {Object<string, any>} [context] - Optional context data
    */
-  public debug(message: string, context?: Record<string, any>): void {
+  debug(message, context) {
     this.log(LogLevel.DEBUG, message, context);
   }
 
   /**
    * Log an info message
+   * @param {string} message - Info message
+   * @param {Object<string, any>} [context] - Optional context data
    */
-  public info(message: string, context?: Record<string, any>): void {
+  info(message, context) {
     this.log(LogLevel.INFO, message, context);
   }
 
   /**
    * Log a warning message
+   * @param {string} message - Warning message
+   * @param {Object<string, any>} [context] - Optional context data
    */
-  public warn(message: string, context?: Record<string, any>): void {
+  warn(message, context) {
     this.log(LogLevel.WARN, message, context);
   }
 
   /**
    * Log an error message
+   * @param {string} message - Error message
+   * @param {Object<string, any>} [context] - Optional context data
    */
-  public error(message: string, context?: Record<string, any>): void {
+  error(message, context) {
     this.log(LogLevel.ERROR, message, context);
   }
 
   /**
    * Check if a log level is enabled based on current configuration
+   * @param {string} level - Log level to check
+   * @returns {boolean} Whether the level is enabled
    */
-  public isLevelEnabled(level: LogLevel): boolean {
+  isLevelEnabled(level) {
     const levels = Object.values(LogLevel);
     const currentLevelIndex = levels.indexOf(this.options.level);
     const targetLevelIndex = levels.indexOf(level);
@@ -77,22 +93,26 @@ export class Logger {
 
   /**
    * Set the current log level
+   * @param {string} level - Log level from LogLevel enum
    */
-  public setLevel(level: LogLevel): void {
+  setLevel(level) {
     this.options.level = level;
   }
 
   /**
    * Enable or disable console logging
+   * @param {boolean} enable - Whether to enable console logging
    */
-  public setConsoleLogging(enable: boolean): void {
+  setConsoleLogging(enable) {
     this.options.enableConsole = enable;
   }
 
   /**
    * Enable or disable file logging
+   * @param {boolean} enable - Whether to enable file logging
+   * @param {string} [filePath] - Optional file path for logs
    */
-  public setFileLogging(enable: boolean, filePath?: string): void {
+  setFileLogging(enable, filePath) {
     this.options.enableFile = enable;
     if (filePath) {
       this.options.filePath = filePath;
@@ -107,18 +127,23 @@ export class Logger {
 
   /**
    * Log a message with the specified level
+   * @param {string} level - Log level
+   * @param {string} message - Log message
+   * @param {Object<string, any>} [context] - Optional context data
+   * @private
    */
-  private log(level: LogLevel, message: string, context?: Record<string, any>): void {
+  log(level, message, context) {
     // Check if this log level should be processed
     if (!this.isLevelEnabled(level)) {
       return;
     }
 
-    const logEntry: LogEntry = {
+    /** @type {import('../../types/index.js').LogEntry} */
+    const logEntry = {
       level,
       message,
       timestamp: new Date(),
-      context
+      context,
     };
 
     // Log to console if enabled
@@ -134,8 +159,11 @@ export class Logger {
 
   /**
    * Format a log entry for output
+   * @param {import('../../types/index.js').LogEntry} entry - Log entry to format
+   * @returns {string} Formatted log message
+   * @private
    */
-  private formatLogEntry(entry: LogEntry): string {
+  formatLogEntry(entry) {
     const timestamp = this.options.includeTimestamp
       ? `[${entry.timestamp.toISOString()}] `
       : '';
@@ -147,7 +175,7 @@ export class Logger {
     if (entry.context && Object.keys(entry.context).length > 0) {
       try {
         contextStr = `\n${JSON.stringify(entry.context, null, 2)}`;
-      } catch (error) {
+      } catch (_error) {
         contextStr = '\n[Error serializing context]';
       }
     }
@@ -157,8 +185,10 @@ export class Logger {
 
   /**
    * Log an entry to the console
+   * @param {import('../../types/index.js').LogEntry} entry - Log entry to output
+   * @private
    */
-  private logToConsole(entry: LogEntry): void {
+  logToConsole(entry) {
     const formattedMessage = this.formatLogEntry(entry);
     
     if (this.options.colorize) {
@@ -166,43 +196,45 @@ export class Logger {
       const reset = LOG_COLORS.RESET;
       
       switch (entry.level) {
-        case LogLevel.ERROR:
-          console.error(`${color}${formattedMessage}${reset}`);
-          break;
-        case LogLevel.WARN:
-          console.warn(`${color}${formattedMessage}${reset}`);
-          break;
-        case LogLevel.INFO:
-          console.info(`${color}${formattedMessage}${reset}`);
-          break;
-        case LogLevel.DEBUG:
-        default:
-          console.debug(`${color}${formattedMessage}${reset}`);
-          break;
+      case LogLevel.ERROR:
+        console.error(`${color}${formattedMessage}${reset}`);
+        break;
+      case LogLevel.WARN:
+        console.warn(`${color}${formattedMessage}${reset}`);
+        break;
+      case LogLevel.INFO:
+        console.info(`${color}${formattedMessage}${reset}`);
+        break;
+      case LogLevel.DEBUG:
+      default:
+        console.debug(`${color}${formattedMessage}${reset}`);
+        break;
       }
     } else {
       switch (entry.level) {
-        case LogLevel.ERROR:
-          console.error(formattedMessage);
-          break;
-        case LogLevel.WARN:
-          console.warn(formattedMessage);
-          break;
-        case LogLevel.INFO:
-          console.info(formattedMessage);
-          break;
-        case LogLevel.DEBUG:
-        default:
-          console.debug(formattedMessage);
-          break;
+      case LogLevel.ERROR:
+        console.error(formattedMessage);
+        break;
+      case LogLevel.WARN:
+        console.warn(formattedMessage);
+        break;
+      case LogLevel.INFO:
+        console.info(formattedMessage);
+        break;
+      case LogLevel.DEBUG:
+      default:
+        console.debug(formattedMessage);
+        break;
       }
     }
   }
 
   /**
    * Log an entry to a file
+   * @param {import('../../types/index.js').LogEntry} entry - Log entry to write
+   * @private
    */
-  private logToFile(entry: LogEntry): void {
+  logToFile(entry) {
     if (!this.options.filePath) return;
     
     try {
@@ -220,14 +252,15 @@ export const logger = Logger.getInstance();
 
 /**
  * Set global logger options
+ * @param {Partial<import('../../types/index.js').LoggerOptions>} options - Logger options
  */
-export function configureLogger(options: Partial<LoggerOptions>): void {
+export function configureLogger(options) {
   Logger.getInstance(options);
 }
 
 /**
  * Enable debug mode (sets log level to DEBUG)
  */
-export function enableDebugMode(): void {
+export function enableDebugMode() {
   Logger.getInstance({ level: LogLevel.DEBUG });
 }

@@ -1,6 +1,6 @@
-# TypeScript Web Article Summarizer CLI
+# Web Article Summarizer CLI
 
-A powerful command-line tool that processes web articles by scraping their content, cleaning it, and generating AI-powered summaries in Markdown format using Google's Gemini API with the gemini-2.5-flash model.
+A powerful JavaScript command-line tool that processes web articles by scraping their content, cleaning it, and generating AI-powered summaries in Markdown format using Google's Gemini API with the gemini-2.5-flash model.
 
 ## Features
 
@@ -37,12 +37,7 @@ npm install article-summarizer
    npm install
    ```
 
-3. Build the project:
-   ```bash
-   npm run build
-   ```
-
-4. Link the package globally (optional):
+3. Link the package globally (optional):
    ```bash
    npm link
    ```

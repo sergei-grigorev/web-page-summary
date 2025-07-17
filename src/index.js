@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 
 import path from 'path';
-import { parseArguments, showProgress, showSuccess, showError } from './modules/cli';
-import { scrapeUrl } from './modules/scraper';
-import { extractContent } from './modules/extractor';
-import { summarize } from './modules/summarizer';
-import { convertToMarkdown, formatOutput, saveToFile } from './modules/converter';
-import { SummarizerOptions } from './types';
-import { logger } from './modules/utils/logger';
-import { handleError, createFileSystemError } from './modules/utils/error';
+import { parseArguments, showProgress, showSuccess, showError } from './modules/cli.js';
+import { scrapeUrl } from './modules/scraper.js';
+import { extractContent } from './modules/extractor.js';
+import { summarize } from './modules/summarizer.js';
+import { convertToMarkdown, formatOutput, saveToFile } from './modules/converter.js';
+import { logger } from './modules/utils/logger.js';
+import { handleError, createFileSystemError } from './modules/utils/error.js';
 import fs from 'fs';
 
 // Export main function for library usage
-export { summarizeArticle } from './lib';
+export { summarizeArticle } from './lib.js';
 
 /**
  * Main application function
@@ -32,7 +31,7 @@ async function main() {
     }
     
     // Process URL
-    const url = options.url as string;
+    const url = options.url;
     logger.debug('Processing URL', { url });
     showProgress(`Processing article from ${url}`);
     
@@ -46,12 +45,12 @@ async function main() {
     const extractedContent = await extractContent(scraperResult.html, scraperResult.url);
     logger.debug('Content extraction completed', { 
       title: extractedContent.title,
-      contentLength: extractedContent.textContent.length 
+      contentLength: extractedContent.textContent.length, 
     });
     
     // 3. Generate AI summary
     logger.debug('Starting AI summarization');
-    const summarizerOptions: SummarizerOptions = {
+    const summarizerOptions = {
       length: options.length || 'medium',
       includeKeyPoints: true,
     };
@@ -60,7 +59,7 @@ async function main() {
     logger.debug('Summarization completed', { 
       summaryLength: summaryResult.summaryWordCount,
       originalLength: summaryResult.originalWordCount,
-      ratio: (summaryResult.summaryWordCount / summaryResult.originalWordCount) 
+      ratio: (summaryResult.summaryWordCount / summaryResult.originalWordCount), 
     });
     
     // 4. Convert to Markdown
@@ -80,7 +79,7 @@ async function main() {
     const outputDir = path.join(process.cwd(), 'summaries');
     const outputPath = options.output || path.join(
       outputDir, 
-      `${extractedContent.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.md`
+      `${extractedContent.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.md`,
     );
     
     // Create output directory if it doesn't exist
@@ -90,7 +89,7 @@ async function main() {
         fs.mkdirSync(outputDir, { recursive: true });
       }
     } catch (error) {
-      throw createFileSystemError('PERMISSION_DENIED', error as Error, { path: outputDir });
+      throw createFileSystemError('PERMISSION_DENIED', error, { path: outputDir });
     }
     
     logger.debug(`Saving summary to file: ${outputPath}`);
@@ -98,13 +97,13 @@ async function main() {
     
     // Show summary stats
     const compressionRatio = Math.round(
-      (summaryResult.summaryWordCount / summaryResult.originalWordCount) * 100
+      (summaryResult.summaryWordCount / summaryResult.originalWordCount) * 100,
     );
     
     showSuccess(`Summary generated: ${summaryResult.summaryWordCount} words (${compressionRatio}% of original)`, {
       outputPath,
       wordCount: summaryResult.summaryWordCount,
-      compressionRatio
+      compressionRatio,
     });
     
     logger.debug('Application completed successfully');

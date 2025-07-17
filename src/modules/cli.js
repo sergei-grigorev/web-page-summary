@@ -1,25 +1,27 @@
 import { Command } from 'commander';
 import path from 'path';
-import { getConfig } from './config';
-import { SummaryLength, LogLevel } from '../types';
-import { logger, enableDebugMode } from './utils/logger';
-import { createValidationError, handleError, AppError } from './utils/error';
+import { getConfig } from './config.js';
+import { LogLevel } from '../types/index.js';
+import { logger, enableDebugMode } from './utils/logger.js';
+import { createValidationError, handleError, AppError } from './utils/error.js';
 
-interface CLIOptions {
-  url?: string;
-  output?: string;
-  length?: SummaryLength;
-  apiKey?: string;
-  verbose?: boolean;
-  config?: boolean;
-  debug?: boolean;
-  logFile?: string;
-}
+/**
+ * @typedef {Object} CLIOptions
+ * @property {string} [url] - URL of the article to summarize
+ * @property {string} [output] - Output file path for the summary
+ * @property {import('../types/index.js').SummaryLength} [length] - Length of the summary
+ * @property {string} [apiKey] - Gemini API key
+ * @property {boolean} [verbose] - Enable verbose output
+ * @property {boolean} [config] - Configure default settings
+ * @property {boolean} [debug] - Enable debug mode
+ * @property {string} [logFile] - Save logs to file
+ */
 
 /**
  * Initialize and configure the CLI command parser
+ * @returns {Command} Configured commander program
  */
-export function initializeCLI(): Command {
+export function initializeCLI() {
   const config = getConfig();
   const program = new Command();
 
@@ -33,12 +35,12 @@ export function initializeCLI(): Command {
     .option(
       '-o, --output <path>', 
       'Output file path for the summary', 
-      path.join(config.defaults.outputPath, 'summary.md')
+      path.join(config.defaults.outputPath, 'summary.md'),
     )
     .option(
       '-l, --length <length>', 
       'Length of the summary (short, medium, long)', 
-      config.defaults.summaryLength
+      config.defaults.summaryLength,
     )
     .option('-k, --api-key <key>', 'Gemini API key (overrides environment variable)')
     .option('-v, --verbose', 'Enable verbose output (INFO level logs)')
@@ -56,12 +58,14 @@ export function initializeCLI(): Command {
 
 /**
  * Parse command line arguments and validate input
+ * @param {string[]} argv - Command line arguments
+ * @returns {CLIOptions} Parsed CLI options
  */
-export function parseArguments(argv: string[]): CLIOptions {
+export function parseArguments(argv) {
   const program = initializeCLI();
   program.parse(argv);
   
-  const options = program.opts<CLIOptions>();
+  const options = program.opts();
   
   // Configure logging based on options
   configureLogging(options);
@@ -79,8 +83,9 @@ export function parseArguments(argv: string[]): CLIOptions {
 
 /**
  * Configure logging based on CLI options
+ * @param {CLIOptions} options - CLI options
  */
-function configureLogging(options: CLIOptions): void {
+function configureLogging(options) {
   if (options.debug) {
     enableDebugMode();
     logger.debug('Debug mode enabled');
@@ -97,8 +102,10 @@ function configureLogging(options: CLIOptions): void {
 
 /**
  * Validate CLI options and show help if needed
+ * @param {CLIOptions} options - CLI options to validate
+ * @param {Command} program - Commander program instance
  */
-function validateOptions(options: CLIOptions, program: Command): void {
+function validateOptions(options, program) {
   // If config flag is set, we don't need a URL
   if (options.config) {
     return;
@@ -113,10 +120,10 @@ function validateOptions(options: CLIOptions, program: Command): void {
 
   // Validate URL format
   try {
-    new URL(options.url as string);
+    new URL(options.url);
   } catch (error) {
     logger.error(`Invalid URL format: ${options.url}`, { error });
-    throw createValidationError('INVALID_FORMAT', error as Error, { url: options.url });
+    throw createValidationError('INVALID_FORMAT', error, { url: options.url });
   }
 
   // Validate summary length
@@ -125,28 +132,34 @@ function validateOptions(options: CLIOptions, program: Command): void {
     throw createValidationError('INVALID_OPTION', undefined, { 
       option: 'length', 
       value: options.length, 
-      validValues: ['short', 'medium', 'long'] 
+      validValues: ['short', 'medium', 'long'], 
     });
   }
 }
 
 /**
  * Display progress message to user
+ * @param {string} message - Progress message
+ * @param {Record<string, any>} [context] - Additional context
  */
-export function showProgress(message: string, context?: Record<string, any>): void {
+export function showProgress(message, context) {
   logger.info(`🔄 ${message}`, context);
 }
 
 /**
  * Display success message to user
+ * @param {string} message - Success message
+ * @param {Record<string, any>} [context] - Additional context
  */
-export function showSuccess(message: string, context?: Record<string, any>): void {
+export function showSuccess(message, context) {
   logger.info(`✅ ${message}`, context);
 }
 
 /**
  * Display error message to user
+ * @param {string} message - Error message
+ * @param {Error | import('./utils/error.js').AppError} [error] - Error object
  */
-export function showError(message: string, error?: Error | AppError): void {
+export function showError(message, error) {
   logger.error(`❌ ${message}`, error instanceof AppError ? error.getDebugInfo() : error);
 }

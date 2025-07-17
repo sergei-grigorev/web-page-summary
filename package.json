@@ -2,25 +2,23 @@
   "name": "article-summarizer",
   "version": "1.0.0",
   "description": "CLI tool for summarizing web articles using Google's Gemini AI",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.js",
+  "type": "module",
   "bin": {
-    "summarizer": "./dist/index.js"
+    "summarizer": "./src/index.js"
   },
   "files": [
-    "dist",
+    "src",
     "config"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "test": "jest",
-    "lint": "eslint . --ext .ts",
-    "prepare": "npm run build",
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "node --test tests/**/*.test.js",
+    "lint": "eslint . --ext .js",
     "prepublishOnly": "npm test && npm run lint",
     "postinstall": "node -e \"try { require('fs').mkdirSync('./config', { recursive: true }); } catch (e) {}\"",
     "release": "npm version patch && npm publish"
@@ -56,15 +54,7 @@
     "turndown": "^7.1.2"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.13",
-    "@types/turndown": "^5.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.36.0",
-    "@typescript-eslint/parser": "^8.36.0",
     "eslint": "^9.30.1",
-    "jest": "^30.0.4",
-    "ts-jest": "^29.1.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.2"
+    "@eslint/js": "^9.30.1"
   }
 }
