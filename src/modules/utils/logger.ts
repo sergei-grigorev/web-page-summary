@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { LogLevel, LoggerOptions, LogEntry } from '../../types';
+import { LogLevel, type LoggerOptions, type LogEntry } from '../../types';
 import { DEFAULT_LOGGER_OPTIONS, LOG_COLORS, LOG_SYMBOLS } from '../../constants';
 
 /**
@@ -39,28 +39,28 @@ export class Logger {
   /**
    * Log a debug message
    */
-  public debug(message: string, context?: Record<string, any>): void {
+  public debug(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, context);
   }
 
   /**
    * Log an info message
    */
-  public info(message: string, context?: Record<string, any>): void {
+  public info(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, context);
   }
 
   /**
    * Log a warning message
    */
-  public warn(message: string, context?: Record<string, any>): void {
+  public warn(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, context);
   }
 
   /**
    * Log an error message
    */
-  public error(message: string, context?: Record<string, any>): void {
+  public error(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.ERROR, message, context);
   }
 
@@ -108,7 +108,7 @@ export class Logger {
   /**
    * Log a message with the specified level
    */
-  private log(level: LogLevel, message: string, context?: Record<string, any>): void {
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     // Check if this log level should be processed
     if (!this.isLevelEnabled(level)) {
       return;
@@ -147,7 +147,7 @@ export class Logger {
     if (entry.context && Object.keys(entry.context).length > 0) {
       try {
         contextStr = `\n${JSON.stringify(entry.context, null, 2)}`;
-      } catch (error) {
+      } catch {
         contextStr = '\n[Error serializing context]';
       }
     }
@@ -203,7 +203,7 @@ export class Logger {
    * Log an entry to a file
    */
   private logToFile(entry: LogEntry): void {
-    if (!this.options.filePath) return;
+    if (!this.options.filePath) {return;}
     
     try {
       const formattedMessage = this.formatLogEntry(entry);

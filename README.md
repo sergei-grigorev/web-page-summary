@@ -105,31 +105,6 @@ The CLI supports the following options:
 - `--version`: Display version information
 
 
-### Using as a Library
-
-You can also use the summarizer as a library in your Node.js projects:
-
-```typescript
-import { summarizeArticle } from 'article-summarizer';
-
-async function main() {
-  try {
-    const result = await summarizeArticle({
-      url: 'https://example.com/article',
-      length: 'medium',
-      apiKey: 'YOUR_API_KEY' // Optional, will use env var if not provided
-    });
-    
-    console.log(result.markdown);
-  } catch (error) {
-    console.error('Error summarizing article:', error.message);
-  }
-}
-
-main();
-```
-
-The library uses the @google/generative-ai package for Gemini API integration with the default endpoint handling, which properly appends the API key as a query parameter.
 
 ## Configuration
 

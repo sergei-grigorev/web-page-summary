@@ -36,3 +36,14 @@ coverage/
 # Cache
 .npm
 .eslintcache
+
+# TypeScript build info
+.tsbuildinfo
+*.tsbuildinfo
+
+# Jest
+coverage/
+.nyc_output/
+
+# Type checking
+.tsc-out/

@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import path from 'path';
 import { getConfig } from './config';
-import { SummaryLength, LogLevel } from '../types';
+import { LogLevel, type SummaryLength } from '../types';
 import { logger, enableDebugMode } from './utils/logger';
 import { createValidationError, handleError, AppError } from './utils/error';
 
@@ -113,7 +113,7 @@ function validateOptions(options: CLIOptions, program: Command): void {
 
   // Validate URL format
   try {
-    new URL(options.url as string);
+    new URL(options.url);
   } catch (error) {
     logger.error(`Invalid URL format: ${options.url}`, { error });
     throw createValidationError('INVALID_FORMAT', error as Error, { url: options.url });
@@ -133,14 +133,14 @@ function validateOptions(options: CLIOptions, program: Command): void {
 /**
  * Display progress message to user
  */
-export function showProgress(message: string, context?: Record<string, any>): void {
+export function showProgress(message: string, context?: Record<string, unknown>): void {
   logger.info(`🔄 ${message}`, context);
 }
 
 /**
  * Display success message to user
  */
-export function showSuccess(message: string, context?: Record<string, any>): void {
+export function showSuccess(message: string, context?: Record<string, unknown>): void {
   logger.info(`✅ ${message}`, context);
 }
 
@@ -148,5 +148,5 @@ export function showSuccess(message: string, context?: Record<string, any>): voi
  * Display error message to user
  */
 export function showError(message: string, error?: Error | AppError): void {
-  logger.error(`❌ ${message}`, error instanceof AppError ? error.getDebugInfo() : error);
+  logger.error(`❌ ${message}`, error instanceof AppError ? error.getDebugInfo() : error ? { message: error.message, stack: error.stack } : undefined);
 }

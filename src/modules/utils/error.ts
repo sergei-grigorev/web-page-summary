@@ -1,13 +1,13 @@
-import { ErrorType, ErrorDetails } from '../../types';
+import { ErrorType, type ErrorDetails } from '../../types';
 import { ERROR_MESSAGES } from '../../constants';
 
 /**
  * Custom application error class
  */
 export class AppError extends Error {
-  type: ErrorType;
-  context?: Record<string, any>;
-  originalError?: Error;
+  readonly type: ErrorType;
+  readonly context: Record<string, unknown> | undefined;
+  readonly originalError: Error | undefined;
 
   constructor(details: ErrorDetails) {
     super(details.message);
@@ -32,7 +32,7 @@ export class AppError extends Error {
   /**
    * Get detailed error information for debugging
    */
-  getDebugInfo(): Record<string, any> {
+  getDebugInfo(): Record<string, unknown> {
     return {
       type: this.type,
       message: this.message,
@@ -50,7 +50,7 @@ export class AppError extends Error {
 /**
  * Create a network error
  */
-export function createNetworkError(subtype: keyof typeof ERROR_MESSAGES.NETWORK, originalError?: Error, context?: Record<string, any>): AppError {
+export function createNetworkError(subtype: keyof typeof ERROR_MESSAGES.NETWORK, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.NETWORK,
     message: ERROR_MESSAGES.NETWORK[subtype],
@@ -62,7 +62,7 @@ export function createNetworkError(subtype: keyof typeof ERROR_MESSAGES.NETWORK,
 /**
  * Create an API error
  */
-export function createApiError(subtype: keyof typeof ERROR_MESSAGES.API, originalError?: Error, context?: Record<string, any>): AppError {
+export function createApiError(subtype: keyof typeof ERROR_MESSAGES.API, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.API,
     message: ERROR_MESSAGES.API[subtype],
@@ -74,7 +74,7 @@ export function createApiError(subtype: keyof typeof ERROR_MESSAGES.API, origina
 /**
  * Create a validation error
  */
-export function createValidationError(subtype: keyof typeof ERROR_MESSAGES.VALIDATION, originalError?: Error, context?: Record<string, any>): AppError {
+export function createValidationError(subtype: keyof typeof ERROR_MESSAGES.VALIDATION, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.VALIDATION,
     message: ERROR_MESSAGES.VALIDATION[subtype],
@@ -86,7 +86,7 @@ export function createValidationError(subtype: keyof typeof ERROR_MESSAGES.VALID
 /**
  * Create an extraction error
  */
-export function createExtractionError(subtype: keyof typeof ERROR_MESSAGES.EXTRACTION, originalError?: Error, context?: Record<string, any>): AppError {
+export function createExtractionError(subtype: keyof typeof ERROR_MESSAGES.EXTRACTION, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.EXTRACTION,
     message: ERROR_MESSAGES.EXTRACTION[subtype],
@@ -98,7 +98,7 @@ export function createExtractionError(subtype: keyof typeof ERROR_MESSAGES.EXTRA
 /**
  * Create a summarization error
  */
-export function createSummarizationError(subtype: keyof typeof ERROR_MESSAGES.SUMMARIZATION, originalError?: Error, context?: Record<string, any>): AppError {
+export function createSummarizationError(subtype: keyof typeof ERROR_MESSAGES.SUMMARIZATION, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.SUMMARIZATION,
     message: ERROR_MESSAGES.SUMMARIZATION[subtype],
@@ -110,7 +110,7 @@ export function createSummarizationError(subtype: keyof typeof ERROR_MESSAGES.SU
 /**
  * Create a file system error
  */
-export function createFileSystemError(subtype: keyof typeof ERROR_MESSAGES.FILE_SYSTEM, originalError?: Error, context?: Record<string, any>): AppError {
+export function createFileSystemError(subtype: keyof typeof ERROR_MESSAGES.FILE_SYSTEM, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.FILE_SYSTEM,
     message: ERROR_MESSAGES.FILE_SYSTEM[subtype],
@@ -122,7 +122,7 @@ export function createFileSystemError(subtype: keyof typeof ERROR_MESSAGES.FILE_
 /**
  * Create a configuration error
  */
-export function createConfigurationError(subtype: keyof typeof ERROR_MESSAGES.CONFIGURATION, originalError?: Error, context?: Record<string, any>): AppError {
+export function createConfigurationError(subtype: keyof typeof ERROR_MESSAGES.CONFIGURATION, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.CONFIGURATION,
     message: ERROR_MESSAGES.CONFIGURATION[subtype],
@@ -134,10 +134,10 @@ export function createConfigurationError(subtype: keyof typeof ERROR_MESSAGES.CO
 /**
  * Create an unknown error
  */
-export function createUnknownError(message?: string, originalError?: Error, context?: Record<string, any>): AppError {
+export function createUnknownError(message?: string, originalError?: Error, context?: Record<string, unknown>): AppError {
   return new AppError({
     type: ErrorType.UNKNOWN,
-    message: message || ERROR_MESSAGES.UNKNOWN.GENERAL_ERROR,
+    message: message ?? ERROR_MESSAGES.UNKNOWN.GENERAL_ERROR,
     originalError,
     context
   });

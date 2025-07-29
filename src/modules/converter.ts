@@ -1,7 +1,7 @@
 import TurndownService from 'turndown';
 import fs from 'fs';
 import path from 'path';
-import { ConverterOptions, ConversionResult } from '../types';
+import type { ConverterOptions, ConversionResult } from '../types';
 import { showProgress, showSuccess, showError } from './cli';
 
 /**
@@ -21,14 +21,19 @@ export function convertToMarkdown(
   // Convert HTML to Markdown
   const markdown = turndownService.turndown(content);
   
-  return {
+  const result: ConversionResult = {
     markdown,
-    metadata: converterOptions.includeMetadata ? {
+  };
+  
+  if (converterOptions.includeMetadata) {
+    result.metadata = {
       title: '',
       url: '',
       date: new Date().toISOString()
-    } : undefined,
-  };
+    };
+  }
+  
+  return result;
 }
 
 /**
@@ -56,8 +61,8 @@ function configureTurndown(options: ConverterOptions): TurndownService {
   // Add custom rules
   turndownService.addRule('codeBlocks', {
     filter: ['pre'],
-    replacement: function(content: string, _node: any): string {
-      return '```\n' + content + '\n```';
+    replacement(content: string): string {
+      return `\`\`\`\n${  content  }\n\`\`\``;
     }
   });
   
@@ -69,7 +74,7 @@ function configureTurndown(options: ConverterOptions): TurndownService {
  */
 export function formatOutput(
   markdown: string,
-  metadata: Record<string, any> = {}
+  metadata: { title?: string; url?: string; date?: string | Date } = {}
 ): string {
   const { title, url, date } = metadata;
   const formattedDate = date ? new Date(date).toLocaleDateString() : new Date().toLocaleDateString();
@@ -105,10 +110,10 @@ export function formatOutput(
 /**
  * Save Markdown content to file
  */
-export async function saveToFile(
+export function saveToFile(
   content: string,
   filePath: string
-): Promise<string> {
+): string {
   try {
     // Ensure the directory exists
     const directory = path.dirname(filePath);

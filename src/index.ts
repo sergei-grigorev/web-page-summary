@@ -6,18 +6,15 @@ import { scrapeUrl } from './modules/scraper';
 import { extractContent } from './modules/extractor';
 import { summarize } from './modules/summarizer';
 import { convertToMarkdown, formatOutput, saveToFile } from './modules/converter';
-import { SummarizerOptions } from './types';
+import type { SummarizerOptions } from './types';
 import { logger } from './modules/utils/logger';
 import { handleError, createFileSystemError } from './modules/utils/error';
 import fs from 'fs';
 
-// Export main function for library usage
-export { summarizeArticle } from './lib';
-
 /**
  * Main application function
  */
-async function main() {
+async function main(): Promise<void> {
   try {
     logger.debug('Starting application');
     
@@ -43,7 +40,7 @@ async function main() {
     
     // 2. Extract main content
     logger.debug('Starting content extraction');
-    const extractedContent = await extractContent(scraperResult.html, scraperResult.url);
+    const extractedContent = extractContent(scraperResult.html, scraperResult.url);
     logger.debug('Content extraction completed', { 
       title: extractedContent.title,
       contentLength: extractedContent.textContent.length 
@@ -52,7 +49,7 @@ async function main() {
     // 3. Generate AI summary
     logger.debug('Starting AI summarization');
     const summarizerOptions: SummarizerOptions = {
-      length: options.length || 'medium',
+      length: options.length ?? 'medium',
       includeKeyPoints: true,
     };
     
@@ -78,7 +75,7 @@ async function main() {
     
     // 6. Save to file
     const outputDir = path.join(process.cwd(), 'summaries');
-    const outputPath = options.output || path.join(
+    const outputPath = options.output ?? path.join(
       outputDir, 
       `${extractedContent.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.md`
     );
@@ -94,7 +91,7 @@ async function main() {
     }
     
     logger.debug(`Saving summary to file: ${outputPath}`);
-    await saveToFile(formattedOutput, outputPath);
+    saveToFile(formattedOutput, outputPath);
     
     // Show summary stats
     const compressionRatio = Math.round(
@@ -132,4 +129,4 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Run the application
-main();
+void main();

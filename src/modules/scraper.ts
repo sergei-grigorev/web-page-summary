@@ -1,8 +1,15 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ScraperOptions, ScraperResult } from '../types';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import type { ScraperOptions, ScraperResult } from '../types';
 import { getConfig } from './config';
 import { showProgress } from './cli';
 import { createNetworkError, handleError } from './utils/error';
+
+/**
+ * Type guard to check if an error is an AppError
+ */
+function isAppError(error: unknown): error is Error & { name: string } {
+  return error instanceof Error && (error as Error & { name: string }).name === 'AppError';
+}
 
 /**
  * Validates and normalizes a URL
@@ -13,11 +20,12 @@ import { createNetworkError, handleError } from './utils/error';
 export function validateUrl(url: string): string {
   try {
     // Handle cases where URL might be missing protocol
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
+    let normalizedUrl = url;
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
     }
     
-    const parsedUrl = new URL(url);
+    const parsedUrl = new URL(normalizedUrl);
     return parsedUrl.toString();
   } catch (error) {
     throw createNetworkError('INVALID_URL', error as Error, { url });
@@ -29,7 +37,7 @@ export function validateUrl(url: string): string {
  */
 function extractTitle(html: string): string | undefined {
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  return titleMatch ? titleMatch[1].trim() : undefined;
+  return titleMatch?.[1]?.trim();
 }
 
 /**
@@ -93,7 +101,7 @@ export async function scrapeUrl(
         response = await axios.get(normalizedUrl, requestConfig);
         break;
       } catch (error) {
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         attempts++;
         
         if (attempts > scraperConfig.retries) {
@@ -101,7 +109,7 @@ export async function scrapeUrl(
         }
         
         // Wait before retry (exponential backoff)
-        const delay = Math.pow(2, attempts) * 1000;
+        const delay = scraperConfig.retryDelay * Math.pow(2, attempts);
         showProgress(`Retry ${attempts}/${scraperConfig.retries} after ${delay}ms`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -127,10 +135,10 @@ export async function scrapeUrl(
       throw createNetworkError('CONNECTION_FAILED', new Error('Failed to fetch URL after retries'), { url: normalizedUrl });
     }
     
-    const html = response.data;
+    const html = response.data as string;
     
     // Check if we actually got HTML content
-    const contentType = response.headers['content-type'] || '';
+    const contentType = (response.headers['content-type'] as string) ?? '';
     if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
       throw createNetworkError('INVALID_RESPONSE', new Error('Response is not HTML content'), { 
         url: normalizedUrl,
@@ -150,7 +158,7 @@ export async function scrapeUrl(
     };
   } catch (error) {
     // If it's already an AppError, just rethrow it
-    if ((error as any).name === 'AppError') {
+    if (isAppError(error)) {
       throw error;
     }
     
@@ -158,7 +166,7 @@ export async function scrapeUrl(
     if (axios.isAxiosError(error)) {
       if (error.response) {
         // Server responded with non-2xx status
-        return handleAxiosResponseError(error, url, scraperConfig);
+        throw handleAxiosResponseError(error, url);
       } else if (error.request) {
         // Request made but no response received
         throw createNetworkError('CONNECTION_FAILED', error, { 
@@ -176,7 +184,7 @@ export async function scrapeUrl(
 /**
  * Handles Axios response errors and converts them to appropriate AppErrors
  */
-function handleAxiosResponseError(error: any, url: string, _scraperConfig: ScraperOptions): never {
+function handleAxiosResponseError(error: axios.AxiosError, url: string): never {
   const status = error.response?.status;
   const statusText = error.response?.statusText;
   
@@ -193,7 +201,7 @@ function handleAxiosResponseError(error: any, url: string, _scraperConfig: Scrap
       status,
       message: 'Access forbidden' 
     });
-  } else if (status >= 500) {
+  } else if (status !== undefined && status >= 500) {
     throw createNetworkError('CONNECTION_FAILED', error, { 
       url, 
       status,

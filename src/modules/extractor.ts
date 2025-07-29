@@ -1,52 +1,76 @@
-import { load, CheerioAPI, Cheerio } from 'cheerio';
-import { ExtractorOptions, ExtractedContent } from '../types';
+import { load, type CheerioAPI, type Cheerio } from 'cheerio';
+import type { ExtractorOptions, ExtractedContent } from '../types';
 import { getConfig } from './config';
 import { showProgress } from './cli';
+import type { AnyNode } from 'domhandler';
+
+// Interface for DOM text nodes with type and data properties
+interface TextNode {
+  type: string;
+  data: string;
+}
 
 /**
  * Extract main content from HTML
  */
-export async function extractContent(
+export function extractContent(
   html: string,
   url: string,
   options?: Partial<ExtractorOptions>
-): Promise<ExtractedContent> {
+): ExtractedContent {
   const config = getConfig();
   const extractorConfig = { ...config.extractor, ...options };
-  
+
   showProgress('Extracting main content');
-  
+
   // Load HTML into cheerio
   const $ = load(html);
-  
+
   // Extract title
-  const title = extractTitle($) || new URL(url).hostname;
-  
+  let fallbackTitle: string;
+  try {
+    fallbackTitle = new URL(url).hostname;
+  } catch {
+    fallbackTitle = 'Unknown';
+  }
+  const title = extractTitle($) ?? fallbackTitle;
+
   // Remove unwanted elements
   removeUnwantedElements($, extractorConfig.removeSelectors);
-  
+
   // Find main content
   const mainContent = findMainContent($);
-  
+
   // Clean and normalize content
   const cleanedContent = cleanContent(mainContent, $, extractorConfig);
-  
+  if (cleanedContent.length === 0) {
+    throw new Error('No content found after extraction');
+  }
+
   // Extract additional metadata
   const author = extractAuthor($);
   const publishDate = extractPublishDate($);
   const excerpt = extractExcerpt($);
-  
-  // Get plain text version
-  const textContent = $(cleanedContent).text().trim();
-  
-  return {
+
+  const result: ExtractedContent = {
     title,
-    content: cleanedContent.html() || '',
-    textContent,
-    author,
-    publishDate,
-    excerpt,
+    content: cleanedContent.html()?.trim() ?? '',
+    textContent: cleanedContent.text().trim(),
   };
+
+  if (author !== undefined) {
+    result.author = author;
+  }
+
+  if (publishDate !== undefined) {
+    result.publishDate = publishDate;
+  }
+
+  if (excerpt !== undefined) {
+    result.excerpt = excerpt;
+  }
+
+  return result;
 }
 
 /**
@@ -65,14 +89,14 @@ function extractTitle($: CheerioAPI): string | undefined {
     '.post h1',
     'h1',
   ];
-  
+
   for (const selector of titleSelectors) {
     const titleElement = $(selector).first();
     if (titleElement.length > 0) {
       return titleElement.text().trim();
     }
   }
-  
+
   // Fallback to <title> tag
   return $('title').text().trim() || undefined;
 }
@@ -107,10 +131,10 @@ function removeUnwantedElements(
     '[role="navigation"]',
     '[role="complementary"]',
   ];
-  
+
   // Combine default and custom selectors
   const allSelectors = [...defaultSelectors, ...selectors];
-  
+
   // Remove all unwanted elements
   allSelectors.forEach(selector => {
     $(selector).remove();
@@ -120,7 +144,7 @@ function removeUnwantedElements(
 /**
  * Find the main content element in the document
  */
-function findMainContent($: CheerioAPI): Cheerio<any> {
+function findMainContent($: CheerioAPI): Cheerio<AnyNode> {
   // Try different content selectors in order of preference
   const contentSelectors = [
     'article',
@@ -134,31 +158,32 @@ function findMainContent($: CheerioAPI): Cheerio<any> {
     '#main',
     '#content',
   ];
-  
+
   for (const selector of contentSelectors) {
     const contentElement = $(selector).first();
     if (contentElement.length > 0 && contentElement.text().trim().length > 200) {
       return contentElement;
     }
   }
-  
+
   // Fallback: Use body and try to find the element with the most paragraphs
-  const paragraphContainers: {element: any; count: number}[] = [];
-  
-  $('body').find('div, section, main').each((_: number, element: any) => {
+  const paragraphContainers: { element: AnyNode; count: number }[] = [];
+
+  $('body').find('div, section, main').each((_: number, element: AnyNode) => {
     const paragraphCount = $(element).find('p').length;
     if (paragraphCount > 2) {
       paragraphContainers.push({ element, count: paragraphCount });
     }
   });
-  
+
   // Sort by paragraph count (descending)
   paragraphContainers.sort((a, b) => b.count - a.count);
-  
-  if (paragraphContainers.length > 0) {
-    return $(paragraphContainers[0].element);
+
+  const firstContainer = paragraphContainers[0];
+  if (firstContainer) {
+    return $(firstContainer.element);
   }
-  
+
   // Last resort: just return the body
   return $('body');
 }
@@ -167,40 +192,41 @@ function findMainContent($: CheerioAPI): Cheerio<any> {
  * Clean and normalize content
  */
 function cleanContent(
-  content: Cheerio<any>,
+  content: Cheerio<AnyNode>,
   $: CheerioAPI,
   options: ExtractorOptions
-): Cheerio<any> {
+): Cheerio<AnyNode> {
   // Remove empty paragraphs
-  content.find('p').each((_: number, element: any) => {
+  content.find('p').each((_: number, element: AnyNode) => {
     const paragraph = $(element);
     if (paragraph.text().trim() === '') {
       paragraph.remove();
     }
   });
-  
+
   // Handle images based on options
   if (!options.includeImages) {
     content.find('img').remove();
   }
-  
+
   // Handle links based on options
   if (!options.preserveLinks) {
-    content.find('a').each((_: number, element: any) => {
+    content.find('a').each((_: number, element: AnyNode) => {
       const link = $(element);
       const text = link.text();
       link.replaceWith(text);
     });
   }
-  
+
   // Normalize whitespace
-  content.find('*').contents().each((_: number, element: any) => {
-    if (element.type === 'text') {
+  content.find('*').contents().each((_: number, element: AnyNode) => {
+    const textNode = element as TextNode;
+    if (textNode.type === 'text') {
       const text = $(element).text().replace(/\s+/g, ' ').trim();
-      element.data = text;
+      textNode.data = text;
     }
   });
-  
+
   return content;
 }
 
@@ -217,7 +243,7 @@ function extractAuthor($: CheerioAPI): string | undefined {
     '.article-author',
     '[rel="author"]',
   ];
-  
+
   for (const selector of authorSelectors) {
     if (selector.startsWith('meta')) {
       const metaAuthor = $(selector).attr('content');
@@ -231,7 +257,7 @@ function extractAuthor($: CheerioAPI): string | undefined {
       }
     }
   }
-  
+
   return undefined;
 }
 
@@ -249,14 +275,14 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
     '.article-date',
     '.post-date',
   ];
-  
+
   for (const selector of dateSelectors) {
     if (selector.startsWith('meta')) {
       const metaDate = $(selector).attr('content');
       if (metaDate) {
         try {
           return new Date(metaDate);
-        } catch (e) {
+        } catch {
           // Invalid date format, try next selector
         }
       }
@@ -267,7 +293,7 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
         if (datetime) {
           try {
             return new Date(datetime);
-          } catch (e) {
+          } catch {
             // Invalid date format, try next selector
           }
         }
@@ -277,13 +303,13 @@ function extractPublishDate($: CheerioAPI): Date | undefined {
       if (dateElement.length > 0) {
         try {
           return new Date(dateElement.text().trim());
-        } catch (e) {
+        } catch {
           // Invalid date format, try next selector
         }
       }
     }
   }
-  
+
   return undefined;
 }
 
@@ -300,7 +326,7 @@ function extractExcerpt($: CheerioAPI): string | undefined {
     '.article-summary',
     '.post-excerpt',
   ];
-  
+
   for (const selector of excerptSelectors) {
     if (selector.startsWith('meta')) {
       const metaExcerpt = $(selector).attr('content');
@@ -314,7 +340,7 @@ function extractExcerpt($: CheerioAPI): string | undefined {
       }
     }
   }
-  
+
   // Fallback: use first paragraph as excerpt
   const firstParagraph = $('p').first();
   if (firstParagraph.length > 0) {
@@ -323,6 +349,6 @@ function extractExcerpt($: CheerioAPI): string | undefined {
       return text;
     }
   }
-  
+
   return undefined;
 }

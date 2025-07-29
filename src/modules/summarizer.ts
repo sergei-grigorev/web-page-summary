@@ -1,7 +1,35 @@
 import { GoogleGenAI } from '@google/genai';
-import { SummarizerOptions, SummaryResult, SummaryLength } from '../types';
+import type { SummarizerOptions, SummaryResult, SummaryLength } from '../types';
 import { getApiKey } from './config';
 import { showProgress, showError } from './cli';
+
+/**
+ * Interface for Gemini API response
+ */
+interface GeminiApiResponse {
+  text?: string;
+  error?: {
+    message: string;
+    details?: string;
+    statusCode?: number;
+  };
+}
+
+/**
+ * Interface for API error with proper typing
+ */
+interface ApiError extends Error {
+  details?: string;
+  statusCode?: number;
+  stack?: string;
+}
+
+// Configuration constants
+const DEFAULT_MAX_RETRIES = 3;
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_TEMPERATURE = 0.2;
+const DEFAULT_TOP_P = 0.95;
+const DEFAULT_TOP_K = 40;
 
 // Cache for the Gemini model instance
 let aiInstance: GoogleGenAI | null = null;
@@ -9,7 +37,7 @@ let aiInstance: GoogleGenAI | null = null;
 /**
  * Initialize the Gemini model
  */
-function initializeModel() {
+function initializeModel(): GoogleGenAI {
   if (!aiInstance) {
     const apiKey = getApiKey();
     aiInstance = new GoogleGenAI({ apiKey });
@@ -67,7 +95,7 @@ function extractKeyPoints(summary: string): { summary: string; keyPoints: string
   const keyPointsMatch = summary.match(/key points:|main points:|key takeaways:|main takeaways:/i);
   
   if (keyPointsMatch) {
-    const splitIndex = keyPointsMatch.index || 0;
+    const splitIndex = keyPointsMatch.index ?? 0;
     const mainSummary = summary.substring(0, splitIndex).trim();
     const keyPointsSection = summary.substring(splitIndex);
     
@@ -104,14 +132,14 @@ export async function summarize(
     const prompt = generatePrompt(content, options);
     
     // Set up retry logic
-    const maxRetries = 3;
+    const maxRetries = DEFAULT_MAX_RETRIES;
     let retries = 0;
     let error: Error | null = null;
     
     while (retries < maxRetries) {
       try {
         const result = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: GEMINI_MODEL,
           contents: [
             {
               role: 'user',
@@ -119,15 +147,15 @@ export async function summarize(
             }
           ],
           config: {
-            temperature: 0.2,
-            topP: 0.95,
-            topK: 40,
+            temperature: DEFAULT_TEMPERATURE,
+            topP: DEFAULT_TOP_P,
+            topK: DEFAULT_TOP_K,
           },
         });
         
         // Get the response text from the first candidate
-        const response = result;
-        const summaryText = response.text || '';
+        const response = result as GeminiApiResponse;
+        const summaryText = response.text ?? '';
         
         // Process the summary
         const { summary, keyPoints } = extractKeyPoints(summaryText);
@@ -139,16 +167,17 @@ export async function summarize(
           originalWordCount,
           summaryWordCount,
         };
-      } catch (err: any) {
-        error = err;
+      } catch (err: unknown) {
+        const apiError = err as ApiError;
+        error = apiError;
         retries++;
         
         // Log detailed error information
         console.error('Gemini API Error:', {
-          message: err.message,
-          details: err.details || 'No details',
-          stack: err.stack,
-          statusCode: err.statusCode || 'No status code'
+          message: apiError.message,
+          details: apiError.details ?? 'No details',
+          stack: apiError.stack,
+          statusCode: apiError.statusCode ?? 'No status code'
         });
         
         // Wait before retry (exponential backoff)
@@ -159,9 +188,10 @@ export async function summarize(
     }
     
     // If we get here, all retries failed
-    throw error || new Error('Failed to generate summary after multiple attempts');
-  } catch (error: any) {
-    showError('Failed to generate summary', error);
+    throw error ?? new Error('Failed to generate summary after multiple attempts');
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    showError('Failed to generate summary', apiError);
     
     // Provide a fallback summary
     return {
