@@ -226,15 +226,6 @@ summarizer/
    - If summaries are too short or missing important details, try using `--length long`
    - Adjust the default settings with the `--config` option
 
-### Reporting Bugs
-
-If you encounter any issues, please report them on our [GitHub Issues page](https://github.com/yourusername/article-summarizer/issues) with:
-
-- The command you ran
-- The URL you were trying to summarize
-- Any error messages received
-- Your environment (OS, Node.js version)
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
