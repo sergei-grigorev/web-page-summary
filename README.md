@@ -130,6 +130,7 @@ DEFAULT_OUTPUT_PATH=./summaries
 # Scraper Configuration
 SCRAPER_TIMEOUT=10000
 SCRAPER_RETRIES=3
+SCRAPER_RETRY_DELAY=1000
 
 # Optional: Debug Mode
 DEBUG=false
@@ -142,7 +143,6 @@ Create or modify the configuration file at `config/default.json`:
 ```json
 {
   "api": {
-    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
   },
   "defaults": {
     "summaryLength": "medium",
@@ -152,6 +152,7 @@ Create or modify the configuration file at `config/default.json`:
   "scraper": {
     "timeout": 10000,
     "retries": 3,
+    "retryDelay": 1000,
     "userAgent": "Mozilla/5.0 (compatible; ArticleSummarizer/1.0)"
   },
   "extractor": {

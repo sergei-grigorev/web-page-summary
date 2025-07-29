@@ -9,6 +9,7 @@
   "scraper": {
     "timeout": 10000,
     "retries": 3,
+    "retryDelay": 1000,
     "userAgent": "Mozilla/5.0 (compatible; ArticleSummarizer/1.0)"
   },
   "extractor": {
