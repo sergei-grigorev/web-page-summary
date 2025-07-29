@@ -14,17 +14,7 @@ A powerful command-line tool that processes web articles by scraping their conte
 
 ## Installation
 
-### Option 1: Install from npm (recommended)
-
-```bash
-# Install globally
-npm install -g article-summarizer
-
-# Or install locally in your project
-npm install article-summarizer
-```
-
-### Option 2: Install from source
+### Install from source
 
 1. Clone the repository
    ```bash
